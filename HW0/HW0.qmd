@@ -1,0 +1,158 @@
+---
+title: "Homework 0"
+format: pdf
+execute: 
+  echo: false
+  message: false
+  warning: false
+---
+
+```{r}
+library(tidyverse)
+library(kableExtra)
+library(data.table)
+```
+
+```{r}
+#| label: read-data 
+
+long_chicks <- read_csv('chicks.csv')
+
+long_chicks <- data.table(long_chicks)
+
+long_chicks <- long_chicks[, new_variable := (seq_len(.N)-1) * 2, by = Chick]
+
+long_chicks <- 
+  long_chicks %>% 
+  mutate(
+    new_variable = 
+      case_when(
+        Time == 21 ~ new_variable - 1,
+        T ~ new_variable
+      ), 
+    new_variable
+  )
+
+long_chicks %>% 
+  filter(new_variable != Time) %>% nrow() -> missing_obs_count
+
+```
+
+# Brief Data Set Sumamry: 
+
+* Number of unique chicks: `r long_chicks %>% select(Chick) %>% unique %>% nrow`
+
+```{r}
+#| label: count-missing-data
+
+long_chicks %>% 
+  mutate(
+    max = max(Time)
+  ) %>% 
+  filter(
+    Time == max
+  ) %>% 
+  select(Chick) %>% 
+  unique() %>% 
+  unlist() %>% 
+  length() -> complete_obs
+
+long_chicks %>% 
+  select(Chick) %>% 
+  unique() %>% nrow() -> total
+
+long_chicks %>% 
+  group_by(Chick) %>% 
+  summarise(
+    n = n(), 
+    last_obs = max(Time)
+  ) %>% 
+  
+  filter(
+    
+    n != 
+      length(
+        seq(from = 0, to = 20, by = 2) 
+      ) + 1
+  ) -> last_time_for_inc
+```
+
+* Total observations: `r long_chicks %>% nrow`
+
+* Average number of observations per Chick: `r (long_chicks %>% nrow)/(long_chicks %>% select(Chick) %>% unique %>% nrow) %>% round(.,2)`; 12 observations for those wtih complete data
+
+* Number of Chicks with complete observation period: `r complete_obs`; number with last time before time = 21: `r total - complete_obs`
+
+* Number of Chicks with skipped measurement: `r missing_obs_count`
+
+* Number of observations for Chicks with incomlete data (maximum number of observation periods is 12): 
+
+```{r}
+last_time_for_inc %>% 
+  kable(booktabs = T, 
+        align = 'c',
+        col.names = c("Chick ID", "N observed Periods", "Last Observed Time")
+        ) %>% 
+  kable_styling(
+    latex_options = "striped"
+  )
+```
+
+# Longitudinal Plot
+
+```{r}
+
+max <- 
+  long_chicks %>% 
+  summarise(m  = max(weight)) %>% 
+  unlist()
+
+max_for_plot <- 
+  ceiling(
+    max / 10^(nchar(max)-1) 
+  ) * 10^(nchar(max)-1) 
+
+long_chicks %>% 
+  ggplot(
+    aes(
+      x = Time, 
+      y = weight, 
+      group = Chick, 
+      color = as.factor(Diet)
+    )
+  ) + 
+  geom_line(alpha = 0.25) + 
+  geom_smooth(
+    aes(group = as.factor(Diet))
+  ) + 
+  theme_minimal() + 
+  theme(legend.position="bottom",
+        plot.title = element_text(hjust = 0.5)) +  # calling theme here after theme_minimal allows to fuether customization 
+                                      # calling theme minimal after this block overwrites everything we define in theme() 
+  labs(
+    title = "Average Weigth Gain By Diet Type", 
+    x = "Time", 
+    y = "Weigth", 
+    color = "Diet Type"
+  ) + 
+  scale_x_continuous(
+    breaks = seq(from = 0, to = 21, by  = 3) 
+  ) + 
+  scale_y_continuous(
+    limits = c(0, max_for_plot), 
+    breaks = seq(from = 0, 
+                 to = max_for_plot,
+                 by = 100)
+  ) 
+
+```
+
+# Regression Analysis 
+
+```{r}
+
+lm <- lm(weight ~ as.factor(Diet) * Time, data = long_chicks)
+
+summary(lm)
+
+```
