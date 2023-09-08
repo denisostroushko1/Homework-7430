@@ -79,13 +79,13 @@ long_chicks %>%
 
 * Total observations: `r long_chicks %>% nrow`
 
-* Average number of observations per Chick: `r (long_chicks %>% nrow)/(long_chicks %>% select(Chick) %>% unique %>% nrow) %>% round(.,2)`; 12 observations for those wtih complete data
+* Average number of observations per Chick: `r (long_chicks %>% nrow)/(long_chicks %>% select(Chick) %>% unique %>% nrow) %>% round(.,2)`; 12 observations for those with complete data
 
 * Number of Chicks with complete observation period: `r complete_obs`; number with last time before time = 21: `r total - complete_obs`
 
 * Number of Chicks with skipped measurement: `r missing_obs_count`
 
-* Number of observations for Chicks with incomlete data (maximum number of observation periods is 12): 
+* Number of observations for Chicks with incomplete data (maximum number of observation periods is 12): 
 
 ```{r}
 last_time_for_inc %>% 
@@ -101,7 +101,11 @@ last_time_for_inc %>%
 # Longitudinal Plot
 
 ```{r}
-
+#| label: fig-long-plot
+#| fig-cap: "Average Growth Trend by Diet" 
+#| fig-height: 6
+#| fig-width: 9
+#| 
 max <- 
   long_chicks %>% 
   summarise(m  = max(weight)) %>% 
@@ -127,11 +131,11 @@ long_chicks %>%
   ) + 
   theme_minimal() + 
   theme(legend.position="bottom",
-        plot.title = element_text(hjust = 0.5)) +  # calling theme here after theme_minimal allows to fuether customization 
+        plot.title = element_text(hjust = 0.5)) +  # calling theme here after theme_minimal allows to further customization 
                                       # calling theme minimal after this block overwrites everything we define in theme() 
   labs(
     title = "Average Weigth Gain By Diet Type", 
-    x = "Time", 
+    x = "Days Since Birth", 
     y = "Weigth", 
     color = "Diet Type"
   ) + 
@@ -147,12 +151,63 @@ long_chicks %>%
 
 ```
 
+
+
 # Regression Analysis 
 
 ```{r}
-
+#| label: tbl-coeffs
+#| tbl-cap: "Linear Regression Model Estimates On Correlated Data"
+#| 
 lm <- lm(weight ~ as.factor(Diet) * Time, data = long_chicks)
 
-summary(lm)
+summary(lm)$coefficients %>% 
+  data.frame() %>% 
+  mutate(
+    name = c(
+      "Intercept", 
+      "Diet 2 Factor", 
+      "Diet 3 Factor", 
+      "Diet 4 Factor", 
+      
+      "Time Slope", 
+      "Diet 2 Factor", 
+      "Diet 3 Factor", 
+      "Diet 4 Factor"
+    )
+  ) %>% 
+  
+  select(name, everything()) -> res 
+
+rownames(res) <- NULL
+
+res %>% 
+  kable(
+    booktabs = T, 
+    digits = 2, 
+    align = c('l', rep('c', length(.)-1)), 
+    col.names = c("Model Term", "Estimate", "SE", "T-value", "P-value")
+  ) %>% 
+  kable_styling(
+    latex_options = c("striped", "condensed", "HOLD_position"), 
+    full_width = F
+  )
 
 ```
+
+**Takeaways**
+
+* Failure to account for proper correlation structures produces standard errors of regression lines that are way too small 
+
+  * Linear model assumptions state that the observations are independent, meaning that for chick with ID = 1 weight at time 15 is 
+    independent of weight weight at 7, which is incorrect 
+    
+  * Correlation within the subject produces a strong linear trend within a subject, but the trend lines are different from subject to 
+    subject, which we are not able to account for using a linear regression model 
+
+* Perhaps the slope estimate itself is a valid results, just like in the case of highly correlated predictors. However, standard errors
+are definitely incorrect 
+
+* There is *some* effect of diet on weight change, with diet 3 producing the highest average weight gain, however, we are not able to 
+make a proper statistical conclusion due to wrong standard error of model estimates 
+
