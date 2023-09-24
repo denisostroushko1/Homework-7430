@@ -1,0 +1,277 @@
+---
+title: "Homework 1"
+author: "Denis Ostroushko"
+format: pdf
+execute: 
+  echo: false
+  message: false
+  warning: false
+---
+
+```{r read in packages }
+path_main_folder = substr(getwd(), 1, nchar(getwd()) - nchar("HW1"))
+
+source(paste0(path_main_folder, "Master Packages.R"))
+```
+
+```{r read data }
+timetrial <- read_csv('timetrial.csv')
+
+
+timetrial_long <- 
+  timetrial %>% 
+  pivot_longer(
+    cols = c("Trial1", "Trial2", "Trial3", "Trial4", "Trial5"), 
+    names_to = "Trial", 
+    values_to = "Measure"
+  ) %>% 
+  mutate(
+    Trial_num = as.numeric(substr(Trial, nchar("Trial")+1,  nchar("Trial") + 2)
+                                  )
+  )
+
+```
+
+# Question 1 
+
+## a)
+
+Outcomes for 20th subject are shown in @tbl-y-20
+
+```{r answer 1a }
+#| label: tbl-y-20
+#| tbl-cap: "Outcomes for 20th subject in the study" 
+#| 
+timetrial_long %>% 
+  filter(Id == '20') %>% 
+  select(Measure) %>% 
+  kable(booktabs = T, 
+        align = 'c', 
+      col.names = c("Y20")) %>% 
+  kable_styling(full_width = F, latex_options = c("HOLD_position"))
+```
+
+## b) 
+
+In the long format of the data, where we have `r length(unique(timetrial_long$Id))` unique participants, and 
+`r nrow(timetrial_long)/length(unique(timetrial_long$Id)) %>% round(.)` observations per Id, the full length of responses $\textbf Y$ is `r nrow(timetrial_long)`
+
+## c)
+
+We are given that for a random variable that generate observed values for the 20th participant, $Var(Y_{20 \ j}) =$ 0.05, so 
+variance is constant for each observation $j$ = 1, 2, 3, 4, 5. 
+
+Covariance of $i^{th}$ and $j^{th}$ observations is also constant at 0.2. 
+
+Covariance of $i^{th}$ observation with itself is variance, an is 0.05. 
+
+@tbl-vcov-20 displays resulting variance-covariance matrix. 
+
+```{r 1c egenrate vcov matrix}
+#| label: tbl-vcov-20
+#| tbl-cap: "Variance-covariance matrix for 20th participant" 
+vcov_20 <- matrix(c(rep(0.02, 25)), nrow = 5, ncol = 5)
+
+for(i in 1:5){
+  vcov_20[i,i] = 0.05
+}
+
+vcov_20 %>% 
+  kable(booktabs = T
+        ) %>% 
+  kable_styling(latex_options = "HOLD_position")
+```
+
+We can now convert this matrix into the correlation matrix. 
+
+$\rho_{ij} = \frac{Cov(Y_{ij}, Y_{jk}}{\sqrt{Var(Y_{ij}) * Var(Y_{jk})}}$
+
+Since all variances are eaqual tp 0.05, the calculation is pretty straightforward. 
+
+Resulting correlation matrix is shown in @tbl-corr-matrix-20 
+
+```{r correlation matrix 1c }
+#| label: tbl-corr-matrix-20 
+#| tbl-cap: "Correlation matrix for 20th individual"
+
+(vcov_20 /( sqrt(0.05) *sqrt( 0.05))) %>% 
+  kable(booktabs = T
+        ) %>% 
+  kable_styling(latex_options = "HOLD_position")
+  
+```
+
+Each observation on the diagonal is equal to 1, which makes the results more credible 
+
+## d) 
+
+A variance-covariance matrix for each individual is $5 \times 5$ in size, and we have 107 individuals, therefore the size of 
+full matrix is ($5 \times 107$) $\times$  ($5 \times 107$), which means that the dimension of variance covariance matrix 
+${\Sigma}$ is $535 \times 535$. 
+
+## e) 
+
+We consider trial number, age, and sex of a participant as predictors. Values provided in the dataset are given in 
+the @tbl-predictors-20. 
+
+```{r}
+#| label: tbl-predictors-20
+#| tbl-cap: "Covariates for 20th participant" 
+#| 
+timetrial_long %>% 
+  filter(Id == 20)  %>% 
+  select(Trial_num, Age, Sex) -> 
+  
+  x_20 
+
+x_20 %>% 
+  kable(
+    col.names = c("Trial Number", "Age", "Sex"), 
+    booktabs = T
+  ) %>% 
+  kable_styling(latex_options = "HOLD_position", full_width = F)
+
+```
+
+However, we also need a column of 1s in order to estimate $\hat \beta_0$. A full matrix $\textbf X_{20}$ for the 20th 
+participant is given in @tbl-20-full-x
+
+```{r}
+#| label: tbl-20-full-x
+#| tbl-cap: "Full matrix for model estimation" 
+#| 
+x_20 %>% 
+  cbind(
+    data.frame(Intercept = rep(1, 5)), 
+    .
+  )%>% 
+  kable(
+    col.names = c(""," ", "", ""), 
+    booktabs = T
+  ) %>% 
+  kable_styling(latex_options = "HOLD_position", full_width = F)
+```
+
+## f) 
+
+Including intercept column, the full dimension of $\textbf X$ is 535 $\times$ 4. Without intercept, the size is 
+ $\textbf X$ is 535 $\times$ 3. 
+
+# Question 2 
+
+## a) 
+
+```{r 2a boxplot for outliers }
+#| label: fig-boxplot-2a
+#| fig-cap: "Distbution of Reaction Measuresements in Each Trial"
+ggplot(
+  data = timetrial_long, 
+  aes(x = Trial_num, y = Measure, group = Trial)
+) + 
+  theme_minimal() + 
+  geom_boxplot(fill = NA) + 
+  geom_jitter(alpha = 0.5, width = .25) + 
+  
+  labs(
+    title = "Distribtion of Reaction Times", 
+    x = "Trial Number", 
+    y = "Measurement"
+  )
+
+```
+
+```{r 2a spahetti }
+#| label: fig-spah-2a
+#| fig-cap: "Individual Profiles of Measuresements for each participant"
+ggplot(
+  data = timetrial_long, 
+  aes(x = Trial_num, y = Measure, group = Id)
+) + 
+  theme_minimal() + 
+  geom_line(alpha = 0.5, color = "grey") + 
+  stat_smooth(aes(group = 1)) + 
+  
+  labs(
+    title = "Distribtion of Reaction Times", 
+    x = "Trial Number", 
+    y = "Measurement"
+  )
+```
+
+## b) 
+
+
+
+## c) 
+
+```{r 2c spahetti by age group }
+
+#| label: fig-spah-2a
+#| fig-cap: "Individual Profiles of Measuresements for each participant"
+
+timetrial_long <- 
+  timetrial_long %>% 
+  mutate(
+    age_cat = ifelse(Age < 18, "Children", "Adults")
+  )
+
+ggplot(
+  data = timetrial_long, 
+  aes(x = Trial_num, y = Measure, group = Id)
+) + 
+  theme_minimal() + 
+  geom_line(alpha = 0.5, color = "grey") + 
+  stat_smooth(aes(group = age_cat, color = age_cat)) + 
+  
+  labs(
+    title = "Distribtion of Reaction Times", 
+    x = "Trial Number", 
+    y = "Measurement", 
+    color = ""
+  )
+
+```
+
+# Question 3 
+
+## a) 
+
+```{r correlation matrix viz 3a }
+#| label: fig-corrplot-3a
+ggcorrplot(
+  timetrial %>% select(Trial1, Trial2, Trial3, Trial4, Trial5) %>% cor(),
+  type = "upper",
+  outline.color = "white",
+  lab = TRUE
+)
+
+```
+
+## b) 
+
+# Question 4 
+
+## a) 
+
+```{r 4a t test}
+
+timetrial_long %>% 
+  group_by(Trial) %>% 
+  summarize(mean(Measure))
+
+t.test(
+  x = timetrial %>% select(Trial5) %>% unlist() , 
+  y = timetrial %>% select(Trial1) %>% unlist() ,
+  alternative = "less"
+)
+
+```
+
+## b) 
+
+### i) 
+
+### ii) 
+
+### iii) 
+
