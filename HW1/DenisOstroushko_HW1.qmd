@@ -86,7 +86,7 @@ We can now convert this matrix into the correlation matrix.
 
 $\rho_{ij} = \frac{Cov(Y_{ij}, Y_{jk}}{\sqrt{Var(Y_{ij}) * Var(Y_{jk})}}$
 
-Since all variances are eaqual tp 0.05, the calculation is pretty straightforward. 
+Since all variances are equal to 0.05, the calculation is pretty straightforward. 
 
 Resulting correlation matrix is shown in @tbl-corr-matrix-20 
 
@@ -154,8 +154,7 @@ x_20 %>%
 
 ## f) 
 
-Including intercept column, the full dimension of $\textbf X$ is 535 $\times$ 4. Without intercept, the size is 
- $\textbf X$ is 535 $\times$ 3. 
+Including intercept column, the full dimension of $\textbf X$ is 535 $\times$ 4. Without intercept, the size of a matrix with three predictors is 535 $\times$ 3. 
 
 # Question 2 
 
@@ -163,7 +162,7 @@ Including intercept column, the full dimension of $\textbf X$ is 535 $\times$ 4.
 
 ```{r 2a boxplot for outliers }
 #| label: fig-boxplot-2a
-#| fig-cap: "Distbution of Reaction Measuresements in Each Trial"
+#| fig-cap: "Distribution of Reaction Measurements in Each Trial"
 ggplot(
   data = timetrial_long, 
   aes(x = Trial_num, y = Measure, group = Trial)
@@ -180,9 +179,18 @@ ggplot(
 
 ```
 
-```{r 2a spahetti }
-#| label: fig-spah-2a
-#| fig-cap: "Individual Profiles of Measuresements for each participant"
+@fig-boxplot-2a shows the distribution of scores in each trial for all participants. While each trial has extreme values, 
+ranging from 0.5 to 0.6, consistency of these values across the five trials suggests that these values are not necessarily outliers. However, reaction times in trial number two close to 0.8 should be considered outliers. 
+
+Using boxplots we assessed the shape of distribution and how it looks over time. It appears that for a hard task like 
+showing reaction to quick events, short term results do not seem to vary much. 
+
+
+## b) 
+
+```{r 2b spahetti }
+#| label: fig-spah-2b
+#| fig-cap: "Individual Profiles of Measurements for each participant"
 ggplot(
   data = timetrial_long, 
   aes(x = Trial_num, y = Measure, group = Id)
@@ -198,16 +206,15 @@ ggplot(
   )
 ```
 
-## b) 
-
-
+@fig-spah-2b shows that the average trend *seems* to be downward, but it is rather weak. There is not much visual evidence 
+that there are any individual trajectories that can be considered outliers. Individuals tend to have higher measurements 
+in a given trial, however, it appears to be 'random' noise or variations. 
 
 ## c) 
 
 ```{r 2c spahetti by age group }
-
-#| label: fig-spah-2a
-#| fig-cap: "Individual Profiles of Measuresements for each participant"
+#| label: fig-spah-2c
+#| fig-cap: "Individual Profiles of Measurements for each participant"
 
 timetrial_long <- 
   timetrial_long %>% 
@@ -220,8 +227,8 @@ ggplot(
   aes(x = Trial_num, y = Measure, group = Id)
 ) + 
   theme_minimal() + 
-  geom_line(alpha = 0.5, color = "grey") + 
-  stat_smooth(aes(group = age_cat, color = age_cat)) + 
+  geom_line(alpha = 0.25, color = "grey") + 
+  stat_smooth(aes(group = age_cat, color = age_cat), se = T) + 
   
   labs(
     title = "Distribtion of Reaction Times", 
@@ -232,9 +239,17 @@ ggplot(
 
 ```
 
+
+@fig-spah-2c shows that, on average, adults have lower response time in each trial, however, by trial number 4 and 5, the 
+difference seems to be smaller. 
+
 # Question 3 
 
 ## a) 
+
+@fig-corrplot-3a shows that sample correlation between time points, or trials, seems to be pretty equal, with some 
+random sampling variation. There are a few values that are a little more different than most values in the sample, however, 
+this visual pattern suggests that the correlation structure is Exchangeable. 
 
 ```{r correlation matrix viz 3a }
 #| label: fig-corrplot-3a
@@ -249,29 +264,218 @@ ggcorrplot(
 
 ## b) 
 
+```{r}
+
+timetrial %>% select(Trial1, Trial2, Trial3, Trial4, Trial5) %>% cor() %>% matrix(., nrow = 25)  %>% unique() -> res
+res <- res[res != 1]
+```
+
+Of displayed values in the sample correlation matrix on @fig-corrplot-3a, the average value is `r mean(res) %>% round(.,2)`. 
+From a set of `r length(res)` correlation values, we obtain a 95% confidence interval for the mean value, which is (
+`r (mean(res) - 1.96*sd(res)/sqrt(length(res))) %>% round(.,2)`, 
+`r (mean(res) + 1.96*sd(res)/sqrt(length(res))) %>% round(.,2)`). 
+
+As most values fall within this range, there is little evidence that the values are auto-regressive, or M-independent. 
+
 # Question 4 
 
 ## a) 
 
-```{r 4a t test}
+If there is a learning effect, we want to test if the average response time is lower in the fifth trial compared to the first 
+trial. Therefore, we want to use a one sided t-test for the difference in means. 
 
+```{r 4a t test}
+#| label: tbl-4a
+#| tbl-cap: "Average response time in each trial"
+#| 
 timetrial_long %>% 
   group_by(Trial) %>% 
-  summarize(mean(Measure))
+  summarize(mean(Measure),
+            sd(Measure)/sqrt(n())
+            ) %>% 
+  filter(Trial %in% c("Trial1", "Trial2") ) %>% 
+  kable(booktabs = T, 
+        digits = 2, 
+        align = 'c', 
+        col.names = c("Trial", "Average Response", "Estiamte SE")) %>% 
+  kable_styling(latex_options = 'HOLD_position')
 
+```
+
+```{r}
+#| echo: false
 t.test(
   x = timetrial %>% select(Trial5) %>% unlist() , 
   y = timetrial %>% select(Trial1) %>% unlist() ,
   alternative = "less"
-)
+) -> ttest_res
 
 ```
+
+* Null Hypothesis: $Mean_{Trial \ 5} = Mean_{Trial \ 1}$
+
+* Alternative Hypothesis: $Mean_{Trial \ 5} < Mean_{Trial \ 1}$
+
+* Difference in means: `r abs(round(ttest_res$estimate[1] - ttest_res$estimate[2], 2))`, on average, the measurements in 
+Trial 5 decreased
+
+* Test statistic and p-value: `r round(ttest_res$statistic, 2)`, `r round(ttest_res$p.value, 4)`
+
+* P-value is less than 0.05, therefore, we can conclude that the average response time decreased for trial number 5 
+
+
 
 ## b) 
 
 ### i) 
 
+To detect any differences between adults and children in each trial we use a two-sided t-test.
+
+@tbl-trialwise-t-test provides estimates for adults in children in each trial. Since we are performing multiple comparisons 
+here, I performed a Benjamini-Hochberg adjustments of p-values to control for false discovery rate. It appears that the 
+only difference appears for trial number 2. This corresponds to @fig-spah-2c, which shows that the largest gap in the 
+average trends for two age categories also took place at trial number 2 
+
+```{r}
+#| label: tbl-trialwise-t-test
+#| tbl-cap: "Two-sided T-test comparisons between children and adults in each trial" 
+#| 
+res <- 
+  data.frame(
+    trial = c(1:5), 
+    kids = rep(NA, 5),
+    kids_n = rep(NA, 5), 
+    adult = rep(NA, 5), 
+    adults_n = rep(NA, 5), 
+    diffrence = rep(NA, 5), 
+    sd = rep(NA, 5), 
+    p_val = rep(NA, 5)
+  )
+
+for(i in 1:5){
+  
+  X = timetrial_long %>% filter(Trial_num == i & age_cat == "Adults") %>% select(Measure) %>% unlist()
+  Y = timetrial_long %>% filter(Trial_num == i & age_cat == "Children") %>% select(Measure) %>% unlist()
+  
+  res$adult[i] = mean(X)
+  res$kids[i] = mean(Y)
+  
+  res$adults_n[i] = length(X)
+  res$kids_n[i] = length(Y)
+
+  t.test(
+    x = X, 
+    y = Y, 
+    alternative= 'two.sided'
+  ) -> iter_t
+  
+  res$diffrence[i] <- iter_t$estimate 
+  res$sd[i] <- iter_t$stderr
+  res$p_val[i] <- iter_t$p.value
+  
+  }
+
+res <-
+  res %>% 
+  mutate(
+    bh_adj_p_val = p.adjust(p_val, method="BH")
+  )
+
+kids_n <- res$kids_n %>% unique()
+adults_n <- res$adults_n %>% unique()
+
+res %>% 
+  select(-kids_n, -adults_n) %>% 
+  kable(
+    align = 'c', 
+    digits = 2, 
+    booktabs = T, 
+    col.names = c("Trial", "Children Average", "Adults Average", "Est. Differnce", "Estimate Std. Error", "P-value", 
+                  "BH-Adjusted P-value") ) %>% 
+  add_footnote(paste0("N Children in each trial: ", kids_n)) %>% 
+  add_footnote(paste0("N Adults in each trial: ", adults_n)) %>% 
+  add_footnote("Used Benjamini-Hochberg procedure for multiple comparison adjustment") %>% 
+  
+  column_spec(c(1,3,6), width = '1.5cm') %>% 
+  column_spec(c(2,4,5,7), width = '2cm') %>% 
+  column_spec(7, bold = ifelse(res$bh_adj_p_val <= 0.05, T, F) ) %>%
+
+  kable_styling(
+    latex_options = c("hover", "condensed", "HOLD_position")
+  )
+
+
+
+```
+
 ### ii) 
+
+A data summary measure is the average response for each participant. In this section, we perform a two-sample t-test 
+comparing averages for adults vs averages for children. @tbl-4a-2 shows the average of average values from all 5 trials.
+
+```{r}
+#| label: tbl-4a-2
+#| tbl-cap: "Average response time in each trial"
+#| echo: false
+ 
+timetrial_long %>% 
+  group_by(Id, age_cat) %>% 
+  summarise(mean_response = mean(Measure)) %>% 
+  ungroup() -> mean_responses
+
+mean_responses %>% 
+  group_by(age_cat) %>% 
+  summarise(mean(mean_response), 
+            sd(mean_response)/sqrt(n())
+            ) %>% 
+  kable(booktabs = T, 
+        digits = 2, 
+        align = 'c', 
+        col.names = c("Trial", "Average Response", "Estiamte SE")) %>% 
+  kable_styling(latex_options = 'HOLD_position')
+  
+t.test(
+  x = mean_responses %>% filter(age_cat == "Adults") %>% select(mean_response) %>% unlist(),
+  y = mean_responses %>% filter(age_cat == "Children") %>% select(mean_response) %>% unlist(), 
+  alternative = 'two.sided'
+) -> ttest_res
+
+
+```
+
+
+* Null Hypothesis: $Mean_{Adults} = Mean_{Children}$
+
+* Alternative Hypothesis: $Mean_{Adults} \neq Mean_{Children}$
+
+* Difference in means: `r abs(round(ttest_res$estimate[1] - ttest_res$estimate[2], 2))`, on average, adults scored lower
+
+* Test statistic and p-value: `r round(ttest_res$statistic, 2)`, `r round(ttest_res$p.value, 4)`
+
+* P-value is less than 0.05, therefore, we can conclude that on average, the average for adults over 5 trials was lower 
+than that of children. 
+
 
 ### iii) 
 
+**Part A advantages** 
+
+It is a simple and interpretable way. We can also see the difference from trial to trial, which is beneficial. A more sound 
+statistical approach would be to take the difference from trial 1 to trial 5, and then compare the distribution of 
+differences to zero. 
+
+**Part A disadvantages**
+
+However, last point from *advantages* would also be not optimal in this setting. Ignoring trial change for each subject, a cluster variant covariate, results in conservative inference. 
+
+**Part B advantages** 
+
+Analyzing the difference in average of averages allows us to analyze independent observations, so we do not have to deal 
+with covariance structures in this approach. 
+
+**Part B disadvantages** 
+
+Means come from a sampling distribution, and means, as a statistic, have inherent variance attributed to them. Therefore, 
+taking variance of a sample of means, who also come from other random samples, is not as straightforward. Analytical 
+solution may be complicated, because we can not treat them as observed constants. Bootstrap approach may be able to 
+approximate variance estimates that more closely resemble reality. 
