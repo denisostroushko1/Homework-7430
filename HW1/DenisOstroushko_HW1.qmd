@@ -114,7 +114,7 @@ ${\Sigma}$ is $535 \times 535$.
 We consider trial number, age, and sex of a participant as predictors. Values provided in the dataset are given in 
 the @tbl-predictors-20. 
 
-```{r}
+```{r predictor matrix 1e}
 #| label: tbl-predictors-20
 #| tbl-cap: "Covariates for 20th participant" 
 #| 
@@ -264,7 +264,7 @@ ggcorrplot(
 
 ## b) 
 
-```{r}
+```{r 3b correlation }
 
 timetrial %>% select(Trial1, Trial2, Trial3, Trial4, Trial5) %>% cor() %>% matrix(., nrow = 25)  %>% unique() -> res
 res <- res[res != 1]
@@ -302,7 +302,7 @@ timetrial_long %>%
 
 ```
 
-```{r}
+```{r 4a t test }
 #| echo: false
 t.test(
   x = timetrial %>% select(Trial5) %>% unlist() , 
@@ -336,7 +336,7 @@ here, I performed a Benjamini-Hochberg adjustments of p-values to control for fa
 only difference appears for trial number 2. This corresponds to @fig-spah-2c, which shows that the largest gap in the 
 average trends for two age categories also took place at trial number 2 
 
-```{r}
+```{r 4b part 1}
 #| label: tbl-trialwise-t-test
 #| tbl-cap: "Two-sided T-test comparisons between children and adults in each trial" 
 #| 
@@ -413,7 +413,7 @@ res %>%
 A data summary measure is the average response for each participant. In this section, we perform a two-sample t-test 
 comparing averages for adults vs averages for children. @tbl-4a-2 shows the average of average values from all 5 trials.
 
-```{r}
+```{r 4b part 2}
 #| label: tbl-4a-2
 #| tbl-cap: "Average response time in each trial"
 #| echo: false
@@ -479,3 +479,356 @@ Means come from a sampling distribution, and means, as a statistic, have inheren
 taking variance of a sample of means, who also come from other random samples, is not as straightforward. Analytical 
 solution may be complicated, because we can not treat them as observed constants. Bootstrap approach may be able to 
 approximate variance estimates that more closely resemble reality. 
+
+\newpage 
+
+# Appendix 
+
+```{r read in packages appendix}
+#| echo: true
+#| eval: false
+path_main_folder = substr(getwd(), 1, nchar(getwd()) - nchar("HW1"))
+
+source(paste0(path_main_folder, "Master Packages.R"))
+```
+
+```{r read data  appendix}
+#| echo: true
+#| eval: false
+timetrial <- read_csv('timetrial.csv')
+
+
+timetrial_long <- 
+  timetrial %>% 
+  pivot_longer(
+    cols = c("Trial1", "Trial2", "Trial3", "Trial4", "Trial5"), 
+    names_to = "Trial", 
+    values_to = "Measure"
+  ) %>% 
+  mutate(
+    Trial_num = as.numeric(substr(Trial, nchar("Trial")+1,  nchar("Trial") + 2)
+                                  )
+  )
+
+```
+
+```{r answer 1a  appendix}
+#| echo: true
+#| eval: false
+
+# answer 1a  appendix
+
+timetrial_long %>% 
+  filter(Id == '20') %>% 
+  select(Measure) %>% 
+  kable(booktabs = T, 
+        align = 'c', 
+      col.names = c("Y20")) %>% 
+  kable_styling(full_width = F, latex_options = c("HOLD_position"))
+```
+
+```{r 1c egenrate vcov matrix appendix}
+#| echo: true
+#| eval: false
+
+# 1c egenrate vcov matrix appendix
+
+vcov_20 <- matrix(c(rep(0.02, 25)), nrow = 5, ncol = 5)
+
+for(i in 1:5){
+  vcov_20[i,i] = 0.05
+}
+
+vcov_20 %>% 
+  kable(booktabs = T
+        ) %>% 
+  kable_styling(latex_options = "HOLD_position")
+```
+
+```{r correlation matrix 1c  appendix}
+#| echo: true
+#| eval: false
+
+# correlation matrix 1c  appendix
+
+(vcov_20 /( sqrt(0.05) *sqrt( 0.05))) %>% 
+  kable(booktabs = T
+        ) %>% 
+  kable_styling(latex_options = "HOLD_position")
+  
+```
+
+```{r predictor matrix 1e appendix}
+#| echo: true
+#| eval: false
+
+# predictor matrix 1e appendix
+
+timetrial_long %>% 
+  filter(Id == 20)  %>% 
+  select(Trial_num, Age, Sex) -> 
+  
+  x_20 
+
+x_20 %>% 
+  kable(
+    col.names = c("Trial Number", "Age", "Sex"), 
+    booktabs = T
+  ) %>% 
+  kable_styling(latex_options = "HOLD_position", full_width = F)
+
+```
+
+```{r predictors appendix}
+#| echo: true
+#| eval: false
+
+# predictors appendix
+
+x_20 %>% 
+  cbind(
+    data.frame(Intercept = rep(1, 5)), 
+    .
+  )%>% 
+  kable(
+    col.names = c(""," ", "", ""), 
+    booktabs = T
+  ) %>% 
+  kable_styling(latex_options = "HOLD_position", full_width = F)
+```
+
+```{r 2a boxplot for outliers  appendix}
+#| echo: true
+#| eval: false
+
+# 2a boxplot for outliers  appendix
+
+ggplot(
+  data = timetrial_long, 
+  aes(x = Trial_num, y = Measure, group = Trial)
+) + 
+  theme_minimal() + 
+  geom_boxplot(fill = NA) + 
+  geom_jitter(alpha = 0.5, width = .25) + 
+  
+  labs(
+    title = "Distribtion of Reaction Times", 
+    x = "Trial Number", 
+    y = "Measurement"
+  )
+
+```
+
+```{r 2b spahetti  appendix}
+#| echo: true
+#| eval: false
+
+# 2b spahetti  appendix
+
+ggplot(
+  data = timetrial_long, 
+  aes(x = Trial_num, y = Measure, group = Id)
+) + 
+  theme_minimal() + 
+  geom_line(alpha = 0.5, color = "grey") + 
+  stat_smooth(aes(group = 1)) + 
+  
+  labs(
+    title = "Distribtion of Reaction Times", 
+    x = "Trial Number", 
+    y = "Measurement"
+  )
+```
+
+```{r 2c spahetti by age group  appendix}
+#| echo: true
+#| eval: false
+
+# 2c spahetti by age group  appendix
+
+timetrial_long <- 
+  timetrial_long %>% 
+  mutate(
+    age_cat = ifelse(Age < 18, "Children", "Adults")
+  )
+
+ggplot(
+  data = timetrial_long, 
+  aes(x = Trial_num, y = Measure, group = Id)
+) + 
+  theme_minimal() + 
+  geom_line(alpha = 0.25, color = "grey") + 
+  stat_smooth(aes(group = age_cat, color = age_cat), se = T) + 
+  
+  labs(
+    title = "Distribtion of Reaction Times", 
+    x = "Trial Number", 
+    y = "Measurement", 
+    color = ""
+  )
+
+```
+
+```{r correlation matrix viz 3a  appendix}
+#| echo: true
+#| eval: false
+
+# correlation matrix viz 3a  appendix
+
+ggcorrplot(
+  timetrial %>% select(Trial1, Trial2, Trial3, Trial4, Trial5) %>% cor(),
+  type = "upper",
+  outline.color = "white",
+  lab = TRUE
+)
+
+```
+
+```{r 3b correlation  appendix}
+#| echo: true
+#| eval: false
+
+# 3b correlation  appendix
+
+timetrial %>% select(Trial1, Trial2, Trial3, Trial4, Trial5) %>% cor() %>% matrix(., nrow = 25)  %>% unique() -> res
+res <- res[res != 1]
+```
+
+```{r 4a t test appendix 1}
+#| echo: true
+#| eval: false
+
+# 4a t test appendix
+
+timetrial_long %>% 
+  group_by(Trial) %>% 
+  summarize(mean(Measure),
+            sd(Measure)/sqrt(n())
+            ) %>% 
+  filter(Trial %in% c("Trial1", "Trial2") ) %>% 
+  kable(booktabs = T, 
+        digits = 2, 
+        align = 'c', 
+        col.names = c("Trial", "Average Response", "Estiamte SE")) %>% 
+  kable_styling(latex_options = 'HOLD_position')
+
+```
+
+```{r 4a t test appendix }
+#| echo: true
+#| eval: false
+
+# 4a t test appendix 
+
+t.test(
+  x = timetrial %>% select(Trial5) %>% unlist() , 
+  y = timetrial %>% select(Trial1) %>% unlist() ,
+  alternative = "less"
+) -> ttest_res
+
+```
+
+```{r 4b part 1 appendix}
+#| echo: true
+#| eval: false
+
+# 4b part 1 appendix
+
+res <- 
+  data.frame(
+    trial = c(1:5), 
+    kids = rep(NA, 5),
+    kids_n = rep(NA, 5), 
+    adult = rep(NA, 5), 
+    adults_n = rep(NA, 5), 
+    diffrence = rep(NA, 5), 
+    sd = rep(NA, 5), 
+    p_val = rep(NA, 5)
+  )
+
+for(i in 1:5){
+  
+  X = timetrial_long %>% filter(Trial_num == i & age_cat == "Adults") %>% select(Measure) %>% unlist()
+  Y = timetrial_long %>% filter(Trial_num == i & age_cat == "Children") %>% select(Measure) %>% unlist()
+  
+  res$adult[i] = mean(X)
+  res$kids[i] = mean(Y)
+  
+  res$adults_n[i] = length(X)
+  res$kids_n[i] = length(Y)
+
+  t.test(
+    x = X, 
+    y = Y, 
+    alternative= 'two.sided'
+  ) -> iter_t
+  
+  res$diffrence[i] <- iter_t$estimate 
+  res$sd[i] <- iter_t$stderr
+  res$p_val[i] <- iter_t$p.value
+  
+  }
+
+res <-
+  res %>% 
+  mutate(
+    bh_adj_p_val = p.adjust(p_val, method="BH")
+  )
+
+kids_n <- res$kids_n %>% unique()
+adults_n <- res$adults_n %>% unique()
+
+res %>% 
+  select(-kids_n, -adults_n) %>% 
+  kable(
+    align = 'c', 
+    digits = 2, 
+    booktabs = T, 
+    col.names = c("Trial", "Children Average", "Adults Average", "Est. Differnce", "Estimate Std. Error", "P-value", 
+                  "BH-Adjusted P-value") ) %>% 
+  add_footnote(paste0("N Children in each trial: ", kids_n)) %>% 
+  add_footnote(paste0("N Adults in each trial: ", adults_n)) %>% 
+  add_footnote("Used Benjamini-Hochberg procedure for multiple comparison adjustment") %>% 
+  
+  column_spec(c(1,3,6), width = '1.5cm') %>% 
+  column_spec(c(2,4,5,7), width = '2cm') %>% 
+  column_spec(7, bold = ifelse(res$bh_adj_p_val <= 0.05, T, F) ) %>%
+
+  kable_styling(
+    latex_options = c("hover", "condensed", "HOLD_position")
+  )
+
+
+
+```
+
+```{r 4b part 2 appendix}
+#| echo: true
+#| eval: false
+ 
+# 4b part 2 appendix
+
+timetrial_long %>% 
+  group_by(Id, age_cat) %>% 
+  summarise(mean_response = mean(Measure)) %>% 
+  ungroup() -> mean_responses
+
+mean_responses %>% 
+  group_by(age_cat) %>% 
+  summarise(mean(mean_response), 
+            sd(mean_response)/sqrt(n())
+            ) %>% 
+  kable(booktabs = T, 
+        digits = 2, 
+        align = 'c', 
+        col.names = c("Trial", "Average Response", "Estiamte SE")) %>% 
+  kable_styling(latex_options = 'HOLD_position')
+  
+t.test(
+  x = mean_responses %>% filter(age_cat == "Adults") %>% select(mean_response) %>% unlist(),
+  y = mean_responses %>% filter(age_cat == "Children") %>% select(mean_response) %>% unlist(), 
+  alternative = 'two.sided'
+) -> ttest_res
+
+
+```
