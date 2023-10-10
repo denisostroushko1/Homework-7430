@@ -561,16 +561,25 @@ grid.arrange(r1, r2, nrow =1)
 
 ```
 
-
-```{r quasipossion regression model }
-#| eval: false 
-#| label: fig-resid-5
-#| fig-height: 6
-#| fig-width: 12
-# glm_1 = glm(dmfs ~ mutpre, data = dental, family = poisson(link = "log"), start = c(0,1))
+```{r}
 glm_1 = glm(dmfs ~ mutpre, data = dental, family = quasipoisson(link = "log"), start = c(0,1))
 
 disp = summary(glm_1)$dispersion
+
+```
+
+@fig-resid-5 shows residual plot for a quasipoisson regression model with a log link. Overdispersion parameter is `r round(disp,2)`, which is much larger than 
+1. Estimating variance function with a correct $\phi$ parameter produces confidence bound for fitted means that captures variation of data points much 
+more appropriately. 
+
+Residual plot also shows that studentized residuals are now mostly within -2/2 bounds, with mean fluctuating around 0. Quasipoisson regression is a more appropriate fit for the sample of data we have.
+
+```{r quasipossion regression model }
+#| label: fig-resid-5
+#| fig-cap: "Demonstration that Quasipoisson regression is a better fit to the data" 
+#| fig-height: 6
+#| fig-width: 12
+# glm_1 = glm(dmfs ~ mutpre, data = dental, family = poisson(link = "log"), start = c(0,1))
 
 resid_data = 
   data.frame(
@@ -594,19 +603,24 @@ ggplot(data = resid_data,
   labs(
     x = "Fitted values of dmfs", 
     y = "Pearson Residuals", 
-    title = "Poisson GLM - Log Link Residual Plot"
+    title = "Quasi-Poisson GLM - Log Link Residual Plot"
   ) -> r1 
-
-intercept_poisson = exp(glm_1$coefficients["(Intercept)"])
-intercept_poisson = glm_1$coefficients["(Intercept)"]
 
 ggplot(data = resid_data, 
        mapping = aes(x = fitted, 
                      y = outcome)) + 
+  theme_classic() + 
+  theme(legend.position = "bottom") + 
   geom_point() + 
-  geom_line(mapping = aes(x = fitted, y = fitted)) +
-  geom_line(mapping = aes(x = fitted, y = fitted + 1.96 * sqrt(fitted * disp))) + 
-  geom_line(mapping = aes(x = fitted, y = fitted - 1.96 * sqrt(fitted * disp)))
+  geom_line(mapping = aes(x = fitted, y = fitted, color = "Fitted mean")) +
+  geom_line(mapping = aes(x = fitted, y = fitted + 1.96 * sqrt(fitted * disp), color = "Confidence Interval")) + 
+  geom_line(mapping = aes(x = fitted, y = fitted - 1.96 * sqrt(fitted * disp), color = "Confidence Interval")) + 
+  
+  labs(y = "Observed Value of DMF surfaces", 
+       x = "Predicted Value", 
+       color = "Line Types") -> r2 
+
+grid.arrange(r1, r2, nrow =1)
 
 ```
 
@@ -716,7 +730,8 @@ summary(glm2)$coefficients %>%
         ) %>% 
   kable_styling(latex_options = 'hold_position') %>% 
   add_footnote("trtgroupDrug represents the effect of treatment on the outcome") %>% 
-  add_footnote("Placebo is the reference for `Drug` group")
+  add_footnote("Placebo is the reference for `Drug` group")%>% 
+  add_footnote("trtgroupDrug:mutpr represents treatment effect modification")
 
 summary(glm2)$coefficients[rownames(summary(glm2)$coefficients) == "trtgroupDrug", ]["Estimate"] -> est_2
 direction2 <- ifelse(sign(est_2) == 1, "higher", "lower")
@@ -754,10 +769,13 @@ I also notice that the standard error for the treatment increased drastically, w
 suggest that with the inclusion of an interaction term we introduce more collinearity among predictors, inflate standard errors, and 
 reduce statistical significance of the two effects. 
 
-We may suggest centering the baseline MS levels, and other methods to address these issues. 
+We may suggest centering the baseline MS levels, and other methods to address these issues. For example, these are model estimates using the same 
+glm family and link function, but centering the baseline MS levels around the sample mean. @tbl-ex shows that the main effect of treatment aligns closely 
+with the previous results. 
 
 ```{r check collinearity issues }
-#| eval: false 
+#| label: tbl-ex
+#| tbl-cap: "Effect of centering of baseline MS levels on model estimates" 
 #| 
 dental2.2 <- dental2 %>% 
   mutate(mutpre = mutpre - mean(mutpre))
@@ -765,7 +783,19 @@ dental2.2 <- dental2 %>%
 test1 <- glm(mut3mos ~ trtgroup * mutpre, data = dental2, family = gaussian(link = "identity"))
 test2 <- glm(mut3mos ~ trtgroup * mutpre, data = dental2.2, family = gaussian(link = "identity"))
 
+
+summary(test2)$coefficients %>% 
+  kable(booktabs = T, 
+        digits = 2, 
+        align = 'c'
+        ) %>% 
+  kable_styling(latex_options = 'hold_position') %>% 
+  add_footnote("trtgroupDrug represents the effect of treatment on the outcome") %>% 
+  add_footnote("Placebo is the reference for `Drug` group")%>% 
+  add_footnote("trtgroupDrug:mutpr represents treatment effect modification")
+
 ```
+
 ## 2 - D 
 
 ```{r 2a - model 4}
