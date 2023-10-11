@@ -988,3 +988,697 @@ of elevated MS levels.
 We expect that the direction of Risk Ratio and Odds Ratio contrast should be the same. Both are a function of an estimated model 
 parameter $p_i$. However, odds are a non-linear function that takes in this parameter. Therefore, due to a non-linear nature, the 
 ratio of odds is no longer similar to the ratio of risks. 
+
+\newpage
+
+# Appendix 
+
+```{r appendix }
+#| results: hide
+#| echo: true
+#| eval: false 
+path_main_folder = substr(getwd(), 1, nchar(getwd()) - nchar("HW1"))
+
+source(paste0(path_main_folder, "Master Packages.R"))
+
+#| results: hide
+dental <- read_csv('gumR.csv', show_col_types = FALSE)
+
+dental <- 
+  dental %>% 
+  mutate_at(
+    vars(c('trtgroup', 'sex', 'race')), 
+    ~ as.factor(.)
+  )
+
+nrow(dental)
+length(unique(dental$id))
+summary(dental)
+
+dental2 = na.omit(dental)
+
+nrow(dental2)
+length(unique(dental2$id))
+summary(dental2)
+
+# Introduction 
+
+## Handling missing data 
+
+dental <- dental %>% na.omit()
+
+
+# Question 1
+
+## 1- A
+
+#| label: fig-hists
+#| fig-cap: "Distribtion of dmfs outcome variable on the natural and logarithmic scales"
+ggplot(data = dental, 
+       mapping = aes(x = dmfs)) + 
+  theme_classic() + 
+  theme(title = element_text(size = 8)) + 
+  geom_histogram(color = "black", fill = "darkgrey", bins = 10) + 
+  ylab("Count") + 
+  xlab("dmfs on the original scale")-> p1 
+
+ggplot(data = dental, 
+       mapping = aes(x = log(dmfs+1))) + 
+  theme_classic() + 
+  theme(title = element_text(size = 8)) + 
+  geom_histogram(color = "black", fill = "darkgrey", bins = 10) + 
+  ylab("Count") + 
+  xlab("dmfs on the logarithmic  scale") -> p2 
+
+grid.arrange(p1, p2, nrow = 1 )
+
+## 1 - B
+
+### (i)
+
+**(1)**
+
+**(2)**
+
+**(3)**
+
+#| label: tbl-1b-1
+#| tbl-cap: "Gaussian GLM with identity link model estiamtes"
+#| 
+glm_1 = glm(dmfs ~ mutpre, data = dental, family = gaussian(link = "identity"))
+
+summary(glm_1)$coefficients %>% 
+  kable(booktabs = T, 
+        digits = 2, 
+        align = 'c') %>% 
+  kable_styling(latex_options = 'hold_position') %>% 
+  add_footnote("mutpre represents the effect of baseline mutans streptococci")
+
+summary(glm_1)$coefficients[rownames(summary(glm_1)$coefficients) == "mutpre", ]["Estimate"] -> est_1
+direction <- ifelse(sign(est_1) == 1, "incresase", "decrease")
+est_1_show = round(abs(est_1), 2)
+
+confint(glm_1)[rownames(confint(glm_1)) == "mutpre"] %>% 
+  round(., 2) %>% 
+  paste0(., collapse = ", ") %>% 
+  paste0("(", ., ")") -> confint_1
+
+significace_1 <- summary(glm_1)$coefficients[rownames(summary(glm_1)$coefficients) == "mutpre", ]["Pr(>|t|)"]
+signif_1 = ifelse(significace_1 >= 0.05, 
+                   "interval includes 0, there is no evidence of a statistically significant association", 
+                   "interval does not include 0, there is strong evidence of a statistically significant association")
+
+### (ii)
+
+**(1)**
+
+
+**(2)**
+
+**(3)**
+
+#| label: tbl-1b-2
+#| tbl-cap: "Gaussian GLM with log link model estiamtes"
+#| 
+glm_1 = glm(dmfs ~ mutpre, data = dental, family = gaussian(link = "log"), start = c(0,1))
+
+summary(glm_1)$coefficients %>% 
+  kable(booktabs = T, 
+        digits = 2, 
+        align = 'c'
+        ) %>% 
+  kable_styling(latex_options = 'hold_position') %>% 
+  add_footnote("mutpre represents the effect of baseline mutans streptococci")
+
+summary(glm_1)$coefficients[rownames(summary(glm_1)$coefficients) == "mutpre", ]["Estimate"] -> est_1
+direction <- ifelse(sign(est_1) == 1, "incresase", "decrease")
+est_1_show = round(abs(exp(est_1)), 2)
+
+confint(glm_1)[rownames(confint(glm_1)) == "mutpre"] %>% 
+  exp() %>% 
+  {(.-1)*100} %>% 
+  round(. , 2) %>% 
+  paste0(., collapse = ", ") %>% 
+  paste0("(", ., ")") -> confint_1
+
+significace_1 <- summary(glm_1)$coefficients[rownames(summary(glm_1)$coefficients) == "mutpre", ]["Pr(>|t|)"]
+signif_1 = ifelse(significace_1 >= 0.05, 
+                   "interval includes 1, there is no evidence of a statistically significant association", 
+                   "interval does not include 1, there is strong evidence of a statistically significant association")
+
+
+### (iii)
+
+**(1)**
+
+
+**(2)**
+
+
+**(3)**
+
+#| label: tbl-1b-3
+#| tbl-cap: "Gaussian GLM with identity link and log transformation of response: model estiamtes"
+#| 
+glm_1 = glm(log(dmfs+1) ~ mutpre, data = dental, family = gaussian(link = "identity"), start = c(0,1))
+
+summary(glm_1)$coefficients %>% 
+  kable(booktabs = T, 
+        digits = 2, 
+        align = 'c') %>% 
+  kable_styling(latex_options = 'hold_position') %>% 
+  add_footnote("mutpre represents the effect of baseline mutans streptococci")
+
+summary(glm_1)$coefficients[rownames(summary(glm_1)$coefficients) == "mutpre", ]["Estimate"] -> est_1
+direction <- ifelse(sign(est_1) == 1, "incresase", "decrease")
+est_1_show = round(abs(est_1), 2)
+
+confint(glm_1)[rownames(confint(glm_1)) == "mutpre"] %>% 
+  round(., 2) %>% 
+  paste0(., collapse = ", ") %>% 
+  paste0("(", ., ")") -> confint_1
+
+significace_1 <- summary(glm_1)$coefficients[rownames(summary(glm_1)$coefficients) == "mutpre", ]["Pr(>|t|)"]
+signif_1 = ifelse(significace_1 >= 0.05, 
+                   "interval includes 0, there is no evidence of a statistically significant association", 
+                   "interval does not include 0, there is strong evidence of a statistically significant association")
+
+### (iv)
+
+**(1)**
+
+**(2)**
+
+**(3)**
+#| label: tbl-1b-4
+#| tbl-cap: "Poisson GLM with log link model estiamtes"
+#| 
+glm_1 = glm(dmfs ~ mutpre, data = dental, family = poisson(link = "log"), start = c(0,1))
+
+summary(glm_1)$coefficients %>% 
+  kable(booktabs = T, 
+        digits = 2, 
+        align = 'c'
+        ) %>% 
+  kable_styling(latex_options = 'hold_position') %>% 
+  add_footnote("mutpre represents the effect of baseline mutans streptococci")
+
+summary(glm_1)$coefficients[rownames(summary(glm_1)$coefficients) == "mutpre", ]["Estimate"] -> est_1
+direction <- ifelse(sign(est_1) == 1, "incresase", "decrease")
+est_1_show = round(abs(exp(est_1)), 2)
+
+confint(glm_1)[rownames(confint(glm_1)) == "mutpre"] %>% 
+  exp() %>% 
+  {(. - 1) * 100} %>%  
+  round(., 2) %>% 
+  paste0(., collapse = ", ") %>% 
+  paste0("(", ., ")") -> confint_1
+
+significace_1 <- summary(glm_1)$coefficients[rownames(summary(glm_1)$coefficients) == "mutpre", ]["Pr(>|z|)"]
+signif_1 = ifelse(significace_1 >= 0.05, 
+                   "interval includes 1, there is no evidence of a statistically significant association", 
+                   "interval does not include 1, there is strong evidence of a statistically significant association")
+
+## 1 - C
+
+## 1 - D
+
+**(i)**
+
+#| label: fig-resid-1
+#| fig-cap: "Residuals do not fit normal distribution. No evidence of serious outliers, or issues with linear fit." 
+#| fig-height: 6
+#| fig-width: 12
+glm_1 = glm(dmfs ~ mutpre, data = dental, family = gaussian(link = "identity"))
+
+resid_data = 
+  data.frame(
+    fitted = glm_1$fitted.values, 
+    resid = glm_1$residuals, 
+    studentized_resid = rstudent(glm_1)
+  )
+
+r1 = ggplot(data = resid_data, 
+            mapping = aes(x = fitted, y = studentized_resid)) + 
+  theme_classic() + 
+  geom_point() + 
+  geom_hline(yintercept = 0, color = "red") + 
+  geom_hline(yintercept = 2, color = "darkgrey", linetype = "dashed") + 
+  geom_hline(yintercept = -2, color = "darkgrey", linetype = "dashed") + 
+  geom_smooth(se = T, color = "blue") + 
+  scale_y_continuous(limits = c(min(resid_data$studentized_resid) - 1,
+                                max(resid_data$studentized_resid) + 1)) + 
+  
+  labs(
+    x = "Fitted values of dmfs", 
+    y = "Pearson Residuals", 
+    title = "Gaussian GLM - Identity Link Residual Plot"
+  )
+
+ggplot(data = resid_data, 
+       mapping = aes(sample = studentized_resid)) +
+  theme_classic() + 
+  stat_qq() + 
+  stat_qq_line() + 
+
+  labs(x = "Thepretical Quantiles of Standard Normal Distribution", 
+       y = "Pearson Residuals Sample Quantile") -> r1_qq
+
+grid.arrange(r1, r1_qq, nrow = 1)
+
+**(ii)**
+
+#| label: fig-resid-2
+#| fig-cap: "Residuals do not fit normal distribution. No evidence of serious outliers, or issues with linear fit." 
+#| fig-height: 6
+#| fig-width: 12
+glm_1 = glm(dmfs ~ mutpre, data = dental, family = gaussian(link = "log"), start = c(0,1))
+
+resid_data = 
+  data.frame(
+    fitted = glm_1$fitted.values, 
+    resid = glm_1$residuals, 
+    studentized_resid = rstudent(glm_1)
+  )
+
+r1 = ggplot(data = resid_data, 
+            mapping = aes(x = fitted, y = studentized_resid)) + 
+  theme_classic() + 
+  geom_point() + 
+  geom_hline(yintercept = 0, color = "red") + 
+  geom_hline(yintercept = 2, color = "darkgrey", linetype = "dashed") + 
+  geom_hline(yintercept = -2, color = "darkgrey", linetype = "dashed") + 
+  geom_smooth(se = T, color = "blue") + 
+  scale_y_continuous(limits = c(min(resid_data$studentized_resid) - 1,
+                                max(resid_data$studentized_resid) + 1)) + 
+  
+  labs(
+    x = "Fitted values of dmfs", 
+    y = "Pearson Residuals", 
+    title = "Gaussian GLM - Log Link Residual Plot"
+  )
+
+ggplot(data = resid_data, 
+       mapping = aes(sample = studentized_resid)) +
+  theme_classic() + 
+  stat_qq() + 
+  stat_qq_line() + 
+
+  labs(x = "Thepretical Quantiles of Standard Normal Distribution", 
+       y = "Pearson Residuals Sample Quantile") -> r1_qq
+
+grid.arrange(r1, r1_qq, nrow = 1)
+
+**(iii)**
+
+#| label: fig-resid-3
+#| fig-cap: "Residuals have a much heavier lower tail than a theoretical standard normal distirbution. Evidence of serious residual outliers." 
+#| fig-height: 6
+#| fig-width: 12
+glm_1 = glm(log(dmfs+1) ~ mutpre, data = dental, family = gaussian(link = "identity"), start = c(0,1))
+
+resid_data = 
+  data.frame(
+    fitted = glm_1$fitted.values, 
+    resid = glm_1$residuals, 
+    studentized_resid = rstudent(glm_1)
+  )
+
+r1 = ggplot(data = resid_data, 
+            mapping = aes(x = fitted, y = studentized_resid)) + 
+  theme_classic() + 
+  geom_point() + 
+  geom_hline(yintercept = 0, color = "red") + 
+  geom_hline(yintercept = 2, color = "darkgrey", linetype = "dashed") + 
+  geom_hline(yintercept = -2, color = "darkgrey", linetype = "dashed") + 
+  geom_smooth(se = T, color = "blue") + 
+  scale_y_continuous(limits = c(min(resid_data$studentized_resid) - 1,
+                                max(resid_data$studentized_resid) + 1)) + 
+  
+  labs(
+    x = "Fitted values of dmfs", 
+    y = "Pearson Residuals", 
+    title = "Log Transformed Response Gaussian GLM - Identity Link Residual Plot"
+  )
+
+ggplot(data = resid_data, 
+       mapping = aes(sample = studentized_resid)) +
+  theme_classic() + 
+  stat_qq() + 
+  stat_qq_line() + 
+
+  labs(x = "Thepretical Quantiles of Standard Normal Distribution", 
+       y = "Pearson Residuals Sample Quantile") -> r1_qq
+
+grid.arrange(r1, r1_qq, nrow = 1)
+
+**(iv)**
+
+#| label: fig-resid-4
+#| fig-cap: "Clear issue with Variance Fit: Need to use quasipoisson model to estiamte correct variance" 
+#| fig-height: 6
+#| fig-width: 12
+glm_1 = glm(dmfs ~ mutpre, data = dental, family = poisson(link = "log"), start = c(0,1))
+
+disp = summary(glm_1)$dispersion
+
+resid_data = 
+  data.frame(
+    outcome = dental$dmfs, 
+    fitted = glm_1$fitted.values, 
+    resid = glm_1$residuals, 
+    studentized_resid = rstudent(glm_1)
+  )
+
+ggplot(data = resid_data, 
+            mapping = aes(x = fitted, y = studentized_resid)) + 
+  theme_classic() + 
+  geom_point() + 
+  geom_hline(yintercept = 0, color = "red") + 
+  geom_hline(yintercept = 2, color = "darkgrey", linetype = "dashed") + 
+  geom_hline(yintercept = -2, color = "darkgrey", linetype = "dashed") + 
+  geom_smooth(se = T, color = "blue") + 
+  scale_y_continuous(limits = c(min(resid_data$studentized_resid) - 1,
+                                max(resid_data$studentized_resid) + 1)) + 
+  
+  labs(
+    x = "Fitted values of dmfs", 
+    y = "Pearson Residuals", 
+    title = "Poisson GLM - Log Link Residual Plot"
+  ) -> r1 
+
+ggplot(data = resid_data, 
+       mapping = aes(x = fitted, 
+                     y = outcome)) + 
+  theme_classic() + 
+  theme(legend.position = "bottom") + 
+  geom_point() + 
+  geom_line(mapping = aes(x = fitted, y = fitted, color = "Fitted mean")) +
+  geom_line(mapping = aes(x = fitted, y = fitted + 1.96 * sqrt(fitted * disp), color = "Confidence Interval")) + 
+  geom_line(mapping = aes(x = fitted, y = fitted - 1.96 * sqrt(fitted * disp), color = "Confidence Interval")) + 
+  
+  labs(y = "Observed Value of DMF surfaces", 
+       x = "Predicted Value", 
+       color = "Line Types") -> r2 
+
+grid.arrange(r1, r2, nrow =1)
+
+
+glm_1 = glm(dmfs ~ mutpre, data = dental, family = quasipoisson(link = "log"), start = c(0,1))
+
+disp = summary(glm_1)$dispersion
+
+#| label: fig-resid-5
+#| fig-cap: "Demonstration that Quasipoisson regression is a better fit to the data" 
+#| fig-height: 6
+#| fig-width: 12
+# glm_1 = glm(dmfs ~ mutpre, data = dental, family = poisson(link = "log"), start = c(0,1))
+
+resid_data = 
+  data.frame(
+    outcome = dental$dmfs, 
+    fitted = glm_1$fitted.values, 
+    resid = glm_1$residuals, 
+    studentized_resid = rstudent(glm_1)
+  )
+
+ggplot(data = resid_data, 
+            mapping = aes(x = fitted, y = studentized_resid)) + 
+  theme_classic() + 
+  geom_point() + 
+  geom_hline(yintercept = 0, color = "red") + 
+  geom_hline(yintercept = 2, color = "darkgrey", linetype = "dashed") + 
+  geom_hline(yintercept = -2, color = "darkgrey", linetype = "dashed") + 
+  geom_smooth(se = T, color = "blue") + 
+  scale_y_continuous(limits = c(min(resid_data$studentized_resid) - 1,
+                                max(resid_data$studentized_resid) + 1)) + 
+  
+  labs(
+    x = "Fitted values of dmfs", 
+    y = "Pearson Residuals", 
+    title = "Quasi-Poisson GLM - Log Link Residual Plot"
+  ) -> r1 
+
+ggplot(data = resid_data, 
+       mapping = aes(x = fitted, 
+                     y = outcome)) + 
+  theme_classic() + 
+  theme(legend.position = "bottom") + 
+  geom_point() + 
+  geom_line(mapping = aes(x = fitted, y = fitted, color = "Fitted mean")) +
+  geom_line(mapping = aes(x = fitted, y = fitted + 1.96 * sqrt(fitted * disp), color = "Confidence Interval")) + 
+  geom_line(mapping = aes(x = fitted, y = fitted - 1.96 * sqrt(fitted * disp), color = "Confidence Interval")) + 
+  
+  labs(y = "Observed Value of DMF surfaces", 
+       x = "Predicted Value", 
+       color = "Line Types") -> r2 
+
+grid.arrange(r1, r2, nrow =1)
+
+# Question 2 
+dental2 = dental %>% filter(trtgroup != "NoGum")
+dental2$trtgroup = factor(dental2$trtgroup, levels = c("Placebo", "Drug"))
+
+## 2 - A
+
+#| label: tbl-2a-linear-mod
+#| tbl-cap: "Gaussin GLM with identity link model estiamtes"
+glm2 <- glm(mut3mos ~ trtgroup, data = dental2, family = gaussian(link = "identity"))
+
+summary(glm2)$coefficients %>% 
+  kable(booktabs = T, 
+        digits = 2, 
+        align = 'c'
+        ) %>% 
+  kable_styling(latex_options = 'hold_position') %>% 
+  add_footnote("trtgroupDrug represents the effect of treatment on the outcome") %>% 
+  add_footnote("Placebo is the reference for `Drug` group")
+
+summary(glm2)$coefficients[rownames(summary(glm2)$coefficients) == "trtgroupDrug", ]["Estimate"] -> est_2
+direction2 <- ifelse(sign(est_2) == 1, "higher", "lower")
+direction <- ifelse(sign(est_2) == 1, "incresase", "decrease")
+est_2_show = round(abs(exp(est_2)), 2)
+
+confint(glm2)[rownames(confint(glm2)) == "trtgroupDrug"] %>% 
+  round(., 2) %>% 
+  paste0(., collapse = ", ") %>% 
+  paste0("(", ., ")") -> confint_2
+
+significace_2 <- summary(glm2)$coefficients[rownames(summary(glm2)$coefficients) == "trtgroupDrug", ]["Pr(>|t|)"]
+signif_2 = ifelse(significace_2 >= 0.05, 
+                   "interval includes 0, there is no evidence of a statistically significant association", 
+                   "interval does not include 0, there is strong evidence of a statistically significant association")
+
+## 2 - B
+#| label: tbl-2a-multilinear-mod
+#| tbl-cap: "Gaussian GLM with identity link model estiamtes"
+
+glm2 <- glm(mut3mos ~ trtgroup + mutpre, data = dental2, family = gaussian(link = "identity"))
+
+summary(glm2)$coefficients %>% 
+  kable(booktabs = T, 
+        digits = 2, 
+        align = 'c'
+        ) %>% 
+  kable_styling(latex_options = 'hold_position') %>% 
+  add_footnote("trtgroupDrug represents the effect of treatment on the outcome") %>% 
+  add_footnote("Placebo is the reference for `Drug` group")
+
+summary(glm2)$coefficients[rownames(summary(glm2)$coefficients) == "trtgroupDrug", ]["Estimate"] -> est_2
+direction2 <- ifelse(sign(est_2) == 1, "higher", "lower")
+direction <- ifelse(sign(est_2) == 1, "incresase", "decrease")
+est_2_show = round(abs(exp(est_2)), 2)
+
+confint(glm2)[rownames(confint(glm2)) == "trtgroupDrug"] %>% 
+  round(., 2) %>% 
+  paste0(., collapse = ", ") %>% 
+  paste0("(", ., ")") -> confint_2
+
+significace_2 <- summary(glm2)$coefficients[rownames(summary(glm2)$coefficients) == "trtgroupDrug", ]["Pr(>|t|)"]
+signif_2 = ifelse(significace_2 >= 0.05, 
+                   "interval includes 0, there is no evidence of a statistically significant association", 
+                   "interval does not include 0, there is strong evidence of a statistically significant association")
+
+## 2 - C 
+
+#| label: tbl-2a-interact-mod
+#| tbl-cap: "Gaussian GLM with identity link model estiamtes"
+
+glm2 <- glm(mut3mos ~ trtgroup * mutpre, data = dental2, family = gaussian(link = "identity"))
+
+summary(glm2)$coefficients %>% 
+  kable(booktabs = T, 
+        digits = 2, 
+        align = 'c'
+        ) %>% 
+  kable_styling(latex_options = 'hold_position') %>% 
+  add_footnote("trtgroupDrug represents the effect of treatment on the outcome") %>% 
+  add_footnote("Placebo is the reference for `Drug` group")%>% 
+  add_footnote("trtgroupDrug:mutpr represents treatment effect modification")
+
+summary(glm2)$coefficients[rownames(summary(glm2)$coefficients) == "trtgroupDrug", ]["Estimate"] -> est_2
+direction2 <- ifelse(sign(est_2) == 1, "higher", "lower")
+direction <- ifelse(sign(est_2) == 1, "incresase", "decrease")
+est_2_show = round(abs(exp(est_2)), 2)
+
+summary(glm2)$coefficients[rownames(summary(glm2)$coefficients) == "trtgroupDrug:mutp", ]["Estimate"] -> est_int
+
+confint(glm2)[rownames(confint(glm2)) == "trtgroupDrug:mutpre"] %>% 
+  round(., 2) %>% 
+  paste0(., collapse = ", ") %>% 
+  paste0("(", ., ")") -> confint_int
+
+
+confint(glm2)[rownames(confint(glm2)) == "trtgroupDrug"] %>% 
+  round(., 2) %>% 
+  paste0(., collapse = ", ") %>% 
+  paste0("(", ., ")") -> confint_2
+
+significace_2 <- summary(glm2)$coefficients[rownames(summary(glm2)$coefficients) == "trtgroupDrug", ]["Pr(>|t|)"]
+signif_2 = ifelse(significace_2 >= 0.05, 
+                   "interval includes 0, there is no evidence of a statistically significant association", 
+                   "interval does not include 0, there is strong evidence of a statistically significant association")
+
+#| label: tbl-ex
+#| tbl-cap: "Effect of centering of baseline MS levels on model estimates" 
+#| 
+dental2.2 <- dental2 %>% 
+  mutate(mutpre = mutpre - mean(mutpre))
+
+test1 <- glm(mut3mos ~ trtgroup * mutpre, data = dental2, family = gaussian(link = "identity"))
+test2 <- glm(mut3mos ~ trtgroup * mutpre, data = dental2.2, family = gaussian(link = "identity"))
+
+
+summary(test2)$coefficients %>% 
+  kable(booktabs = T, 
+        digits = 2, 
+        align = 'c'
+        ) %>% 
+  kable_styling(latex_options = 'hold_position') %>% 
+  add_footnote("trtgroupDrug represents the effect of treatment on the outcome") %>% 
+  add_footnote("Placebo is the reference for `Drug` group")%>% 
+  add_footnote("trtgroupDrug:mutpr represents treatment effect modification")
+
+## 2 - D 
+#| label: tbl-2d
+#| tbl-cap: "Gaussian GLM with identity link model estiamtes"
+
+dental2 = dental %>% filter(trtgroup != "Drug")
+dental2$trtgroup = factor(dental2$trtgroup, levels = c("NoGum", "Placebo"))
+
+glm2 <- glm(mut3mos ~ trtgroup + mutpre, data = dental2, family = gaussian(link = "identity"))
+
+summary(glm2)$coefficients %>% 
+  kable(booktabs = T, 
+        digits = 2, 
+        align = 'c'
+        ) %>% 
+  kable_styling(latex_options = 'hold_position') %>% 
+  add_footnote("trtgroupPlacebo represents the effect of placebo on the outcome") %>% 
+  add_footnote("'No Gum' is the reference for Placebo group")
+
+summary(glm2)$coefficients[rownames(summary(glm2)$coefficients) == "trtgroupPlacebo", ]["Estimate"] -> est_2
+direction2 <- ifelse(sign(est_2) == 1, "higher", "lower")
+direction <- ifelse(sign(est_2) == 1, "incresase", "decrease")
+est_2_show = round(abs(exp(est_2)), 2)
+
+confint(glm2)[rownames(confint(glm2)) == "trtgroupPlacebo"] %>% 
+  round(., 2) %>% 
+  paste0(., collapse = ", ") %>% 
+  paste0("(", ., ")") -> confint_2
+
+significace_2 <- summary(glm2)$coefficients[rownames(summary(glm2)$coefficients) == "trtgroupPlacebo", ]["Pr(>|t|)"]
+signif_2 = ifelse(significace_2 >= 0.05, 
+                   "interval includes 0, there is no evidence of a statistically significant association", 
+                   "interval does not include 0, there is strong evidence of a statistically significant association")
+
+# Question 3 
+
+dental_lr <- 
+  dental %>% 
+  mutate(
+    mut1mos_4.5_flag = ifelse(mut1mos >= 4.5, 1, 0), 
+    trtgroup = factor(trtgroup, levels = c("NoGum", "Placebo", "Drug"))
+  )
+
+## 3 - A
+
+#| label: tbl-3a-OR
+#| tbl-cap: "Binary Outcome GLM with Logit link model estiamtes" 
+dental_lr <- dental_lr %>% 
+  mutate(trtgroup = factor(trtgroup, levels = c("Placebo", "NoGum", "Drug")))
+
+lr_3a <- glm(mut1mos_4.5_flag ~ trtgroup, data = dental_lr, family = binomial(link = "logit"))
+
+summary(lr_3a)$coefficients %>% 
+  data.frame() %>% 
+  mutate_at(
+    vars("Estimate"), ~ exp(.)  
+  ) %>% 
+  kable(booktabs = T, 
+        digits = 2, 
+        align = 'c', 
+        col.names = c("Exp. Estimate", "Log-standard Error", "Z-statstic", "Pr(>|t|)") 
+        ) %>% 
+  kable_styling(latex_options = 'hold_position') %>% 
+  add_footnote("`NoGum` shows odds ratio for NoGum vs Placebo") %>% 
+  add_footnote("`trtgroupDrug` shows odds ratio for Drug vs Placebo")
+
+
+summary(lr_3a)$coefficients[rownames(summary(lr_3a)$coefficients) == "trtgroupDrug", ]["Estimate"] -> est_3
+direction2 <- ifelse(sign(est_3) == 1, "higher", "lower")
+direction <- ifelse(sign(est_3) == 1, "incresase", "decrease")
+est_2_show = round(abs(exp(est_3)), 2)
+est_2_show_prct = abs(round((exp(est_3) - 1), 2))*100
+
+confint(lr_3a)[rownames(confint(lr_3a)) == "trtgroupDrug"] %>% 
+  exp(.) %>% 
+  round(., 2) %>% 
+  paste0(., collapse = ", ") %>% 
+  paste0("(", ., ")") -> confint_2
+
+significace_2 <- summary(lr_3a)$coefficients[rownames(summary(lr_3a)$coefficients) == "trtgroupDrug", ]["Pr(>|z|)"]
+signif_2 = ifelse(significace_2 >= 0.05, 
+                   "interval includes 1, there is no evidence of a statistically significant association", 
+                   "interval does not include 1, there is strong evidence of a statistically significant association")
+
+
+## 3 - B 
+
+#| label: tbl-3a-RR
+#| tbl-cap: "Binary Outcome GLM with log link model estiamtes" 
+lr_3b <- glm(mut1mos_4.5_flag ~ trtgroup, data = dental_lr, family = binomial(link = "log"))
+
+summary(lr_3b)$coefficients %>% 
+  data.frame() %>% 
+  mutate_at(
+    vars("Estimate"), ~ exp(.)  
+  ) %>% 
+  kable(booktabs = T, 
+        digits = 2, 
+        align = 'c', 
+        col.names = c("Exp. Estimate", "Log-standard Error", "Z-statstic", "Pr(>|t|)") 
+        ) %>% 
+  kable_styling(latex_options = 'hold_position') %>% 
+  add_footnote("`NoGum` shows odds ratio for NoGum vs Placebo") %>% 
+  add_footnote("`trtgroupDrug` shows odds ratio for Drug vs Placebo")
+
+
+summary(lr_3b)$coefficients[rownames(summary(lr_3b)$coefficients) == "trtgroupDrug", ]["Estimate"] -> est_3
+direction2 <- ifelse(sign(est_3) == 1, "higher", "lower")
+direction <- ifelse(sign(est_3) == 1, "incresase", "decrease")
+est_2_show = round(abs(exp(est_3)), 2)
+est_2_show_prct = abs(round((exp(est_3) - 1), 2))*100
+
+confint(lr_3b)[rownames(confint(lr_3b)) == "trtgroupDrug"] %>% 
+  exp(.) %>% 
+  round(., 2) %>% 
+  paste0(., collapse = ", ") %>% 
+  paste0("(", ., ")") -> confint_2
+
+significace_2 <- summary(lr_3b)$coefficients[rownames(summary(lr_3b)$coefficients) == "trtgroupDrug", ]["Pr(>|z|)"]
+signif_2 = ifelse(significace_2 >= 0.05, 
+                   "interval includes 1, there is no evidence of a statistically significant association", 
+                   "interval does not include 1, there is strong evidence of a statistically significant association")
+
+```
