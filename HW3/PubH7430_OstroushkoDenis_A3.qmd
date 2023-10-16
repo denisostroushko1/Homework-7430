@@ -1,0 +1,93 @@
+---
+title: "Homework 3"
+author: "Denis Ostroushko"
+format: pdf
+execute: 
+  echo: false
+  message: false
+  warning: false
+---
+
+```{r read in packages }
+#| results: hide
+#| include: false 
+path_main_folder = substr(getwd(), 1, nchar(getwd()) - nchar("HW3"))
+
+source(paste0(path_main_folder, "Master Packages.R"))
+```
+
+
+```{R}
+#| results: hide
+dental <- read_csv('gumR.csv', show_col_types = FALSE)
+```
+
+# Question 1 
+
+```{r}
+dental_1 <- 
+  dental %>% filter(trtgroup != "NoGum") %>% 
+  select(id, trtgroup, mutpost, mut1mos, mut3mos) %>% 
+  pivot_longer(
+    cols = c('mutpost', 'mut1mos', 'mut3mos'), 
+    names_to = "time_char", 
+    values_to = "MS"
+  ) %>% 
+  mutate(
+    time_weeks = case_when(time_char == "mutpost" ~ 1, 
+                           time_char == "mut1mos" ~ 4, 
+                           time_char == "mut3mos" ~ 12)
+  )
+
+```
+
+## 1 - A
+
+## 1 - B 
+
+### (i)
+
+### (ii)
+
+### (iii)
+
+### (iv)
+
+## 1 - C 
+
+### (i)
+
+### (ii)
+
+### (iii)
+
+## 1 - D
+
+### (i)
+
+### (ii)
+
+## 1 - E
+
+### (i)
+
+### (ii)
+
+**A**
+
+**B**
+
+# Question 2 
+
+## 2 - A
+
+## 2 - B
+
+## 2 - C
+
+## 2 - D
+
+## 2 - E
+
+## 2 - F
+
