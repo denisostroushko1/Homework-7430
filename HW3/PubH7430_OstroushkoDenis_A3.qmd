@@ -24,6 +24,8 @@ dental <- read_csv('gumR.csv', show_col_types = FALSE)
 
 # Question 1 
 
+There were 4 rows of data where MS levels were not measured. We remove these observations from the data. 
+
 ```{r}
 dental_1 <- 
   dental %>% filter(trtgroup != "NoGum") %>% 
@@ -36,58 +38,432 @@ dental_1 <-
   mutate(
     time_weeks = case_when(time_char == "mutpost" ~ 1, 
                            time_char == "mut1mos" ~ 4, 
-                           time_char == "mut3mos" ~ 12)
-  )
+                           time_char == "mut3mos" ~ 12), 
+    trtgroup = factor(trtgroup, levels = c("Placebo", "Drug"))
+    
+  ) %>% 
+  arrange(id, time_weeks) %>% 
+  na.omit()
 
 ```
 
 ## 1 - A
 
+Our linear predictor which will allow you to assess whether the effect of treatment changes over time is given below. We consider an interaction between treatment assignment variable and time to find if changes of MS level
+over time are different for treatment and control groups. @fig-response shows that the average trend over time 
+might be different for the two groups. 
+
+
+```{r}
+#| label: fig-response
+#| fig-cap: "Average MS levels over time"
+#| fig-width: 8
+ggplot(data = dental_1, 
+       mapping = aes(x = time_weeks, y = MS, group = id, color = trtgroup)) + 
+  theme_minimal() + 
+  geom_line(alpha = 0.1) + 
+  geom_smooth(aes(group = trtgroup)) + 
+  labs(color = "Treatment Type", 
+       x = "Weeks Since Baseline", 
+       y = "MS Levels")
+
+```
+
+Linear predictor: 
+
+\begin{equation*}
+E[MS_{ij}] = \beta_0 + \beta_1 \ Treatment_{ij} + \beta_2 \ Time \ in \ Weeks_{ij} + \beta_3 Treatment_{ij} \times Weeks_{ij}
+\end{equation*}
+
 ## 1 - B 
+
+```{r}
+model_1b <- lm(MS ~ time_weeks*trtgroup, data = dental_1)
+```
 
 ### (i)
 
+@tbl-1b-coeffs  displays coefficients for the effect of time and treatment on MS levels. 
+
+```{r}
+#| label: tbl-1b-coeffs 
+#| tbl-cap: "1B - Gaussian GLM Model Estimates" 
+
+0.0008575376 + 0.0016978302 + 2*(-0.0008575376) -> var_int
+
+ci_int = paste0("(", 
+                round(0.08 - 1.96 * sqrt(var_int), 2), 
+                ", " , 
+                round(0.08 + 1.96 * sqrt(var_int), 2), 
+                ")"
+                )
+  
+summary(model_1b)$coefficients %>% 
+  data.frame() %>% 
+  mutate(CI = paste0("(",
+                     round(Estimate - 1.96 * Std..Error, 2), 
+                     ", ",
+                     round(Estimate + 1.96 * Std..Error,2), 
+                     ")"
+                     ), 
+         covariate = rownames(.)
+  ) %>% 
+  select(covariate, Estimate, CI, Pr...t..) %>% 
+  kable(row.names = F, 
+        col.names = c("Predictor Term", "Estiamte", "CI", "P-value"), 
+        align = c('l', 'c', 'c'),
+        booktabs = T, 
+        digits = 2) %>% 
+  kable_styling(latex_options = "hold_position")
+
+``` 
+
+* As time since baseline increases by 1 week, the average level of MS in the Placebo group increased by 0.17 units, 
+after adjusting for other predictors. Effect is bounded by the (0.11, 0.23) confidence interval, suggesting a statistically significant effect of 
+time on the average levels of MS in the Placebo group. 
+
+  - @fig-response suggests that the linear effect might not be the most appropriate for these data. Average MS 
+  levels rise fast and then stay stable for the Placebo group, so we way want to consider non-linear terms for 
+  a more refined statistical model
+  
+* Estimated coefficient for interaction  between time effect and treatment group is -0.09 with p-value < 0.05. Therefore, there is strong statistical evidence that the effect of time on MS levels is different between the 
+two groups. With each additional week in the treated group, on average, MS levels increased by 0.17-0.09 = 0.08 units, after adjusting for other variables. The effect is bounded by the `r ci_int` 95% confidence interval
+
 ### (ii)
 
+Obtained coefficient estimates are not trustworthy. Given that we correctly specified a mean function for the 
+linear predictor, our estimates will be consistent and unbiased estimate for the true effects of covariates on
+predictors. Visual exploration showed that the we might not be specifying all model terms correctly, as there 
+is some visual evidence that over time MS levels for the Placebo group change in a non-linear way. Obtained 
+coefficients $\beta_i$ are consistent estimates for the linear effect of time on the average MS levels, but 
+the true effect is likely a non-linear function. 
+
 ### (iii)
+
+We have cluster variant and invariant predictors. Consider an individual to be a cluster in these data. 
+
+1. Treatment group effect: this is a cluster invariant variable, therefore, we should expect to see a higher 
+variance estimate for this coefficient, when accounting for the correlation structure present in the data. 
+
+2. Time effect for placebo and treated subjects is cluster variant comparative, therefore, when accounting for the 
+correlation structure, we should expect variance estimates to be smaller for these two model estimates. 
 
 ### (iv)
 
+using a robust method for variance estimation will not make model output more close to reality because Gaussian 
+GLM still does not account for the correlation in the data. 
+
 ## 1 - C 
+
+```{r}
+
+gee_1c_independence <- geeglm(formula = MS ~ time_weeks*trtgroup, 
+                              data = dental_1,
+                              id = id, 
+                              corstr = "independence")
+
+gee_1c_exchangeable <- geeglm(formula = MS ~ time_weeks*trtgroup, 
+                              data = dental_1,
+                              id = id, 
+                              corstr = "exchangeable")
+
+gee_1c_ar1          <- geeglm(formula = MS ~ time_weeks*trtgroup, 
+                              data = dental_1,
+                              id = id, 
+                              corstr = "ar1")
+
+gee_1c_unstructured <- geeglm(formula = MS ~ time_weeks*trtgroup, 
+                              data = dental_1,
+                              id = id, 
+                              corstr = "unstructured")
+
+```
 
 ### (i)
 
+@tbl-1c-4-models summarizes model estimates using four types of working correlation. 
+
+1. In terms of strength and significance of effects, all four model agree on significance levels of all four predictors. All four models seem to agree that the main effect of treatment is strong, but not statistically 
+significant at the 95% significance level, however, all models agree that the change in MS levels over time is 
+statistically different for the two groups.
+
+2. Overall, all four types of correlation structures produce very similar results, I suspect that with a 101 
+unique clusters in the data, we have a large enough sample size that variance estimator can correct for any 
+differences imposed by the correlation structures. 
+
+3. When fitting a Gaussian family model with an identity link, we expect model point estimates for Gaussian GLM and 
+Gaussian GEE with independence or exchangeable correlation structure to match. In our case, we observed this behavior, with a minor caveat that due to data incompleteness caused by missingness, exchangeable and independence correlation structures have small differences in the point estimates and variance estimates. 
+
+4. Time measured in weeks is a cluster variant covariate, and each of the four models correctly estimates smaller SE for this predictor when compared with the Gaussian GLM in @tbl-1b-coeffs 
+
+5. Treatment group is a cluster invariant covariate and each model should estimate a higher SE for this term. 
+However, it looks like the results are pretty similar between Gaussian GLM from (1-b) and the four GEE models. I write this off as a coincidence. 
+
+```{r}
+#| label: tbl-1c-4-models 
+#| tbl-cap: "Comparison of Correlation Structure Impact"
+
+pack_row_start = seq(from = 1, to = 1 + 4*3, by = 4)
+pack_row_end   = seq(from = 4, to = 4 + 4*3, by = 4)
+
+rbind(
+  summary(gee_1c_independence)$coefficients %>% data.frame(),
+  summary(gee_1c_exchangeable)$coefficients %>% data.frame(),
+  summary(gee_1c_ar1)$coefficients %>% data.frame(),
+  summary(gee_1c_unstructured)$coefficients %>% data.frame()
+) %>% 
+  mutate(CI = paste0("(",
+                     round(Estimate - 1.96 * Std.err, 2), 
+                     ", ",
+                     round(Estimate + 1.96 * Std.err,2), 
+                     ")"
+                     ), 
+         covariate = rep(rownames(summary(gee_1c_independence)$coefficients), 4)
+  ) %>% 
+  select(covariate, Estimate, CI, Pr...W..) %>% 
+  kable(row.names = F, 
+        digits = 2, 
+        col.names = c("Predictor Term", "Estiamte", "CI", "P-value"), 
+        align = c('l', 'c', 'c'),
+        booktabs = T) %>% 
+  pack_rows(group_label = "Independece Correlation", start_row = pack_row_start[1], end_row = pack_row_end[1]) %>% 
+  pack_rows(group_label = "Exchangeable Correlation", start_row = pack_row_start[2], end_row = pack_row_end[2]) %>% 
+  pack_rows(group_label = "AR-1 Correlation", start_row = pack_row_start[3], end_row = pack_row_end[3]) %>% 
+  pack_rows(group_label = "Unstructured Correlation", start_row = pack_row_start[4], end_row = pack_row_end[4]) %>% 
+  kable_styling()
+```
+
 ### (ii)
 
+Results for exchangeable and independence correlation structures would be identical when the data are balanced and 
+compete. In the case with these data, there are 4 people with only 2 observation and not 3. Therefore, there is 
+a small degree of imbalance and incompleteness in the data, which results in a small discrepancy between the estimates from the 
+independence and exchangeable correlation structures models. 
+
 ### (iii)
+
+```{r}
+
+0.0004391348 + 0.0009037408 + 2*(-0.0004391348) -> v_int
+
+ci_int <- paste0("(", 
+                 round(0.09 - 1.96 * sqrt(v_int), 2), 
+                 ",",
+                 round(0.09 + 1.96 * sqrt(v_int), 2), 
+                 ")"
+                       )
+```
+
+* As time since baseline increases by 1 week, the average level of MS in the Placebo group increased by 0.17 units, 
+after adjusting for other predictors. Effect is bounded by the (0.13, 0.21) 95% confidence interval, suggesting a statistically significant effect of time on the average levels of MS in the Placebo group. 
+
+* Estimated coefficient for interaction  between time effect and treatment group is -0.08 with p-value < 0.05. Therefore, there is strong statistical evidence that the effect of time on MS levels is different between the 
+two groups. With each additional week in the treated group, on average, MS levels increased by 0.17-0.08 = 0.09 units, after adjusting for other variables. The effect is bounded by the `r ci_int` 95% confidence interval.
 
 ## 1 - D
 
 ### (i)
 
+Average MS levels at week one for a subject in the treatment group is given in terms of $\beta$ coefficients: 
+
+\begin{equation*}
+E[MS_{ij}] = \beta_0 + \beta_1 + \beta_2 + \beta_3
+\end{equation*}
+
+Or alternatively, 
+\begin{equation*}
+E[MS_{ij}] = 2.81 + 0.17 - 0.45 - 0.08 = 2.45
+\end{equation*}
+
+Variance of this point estimate is a complicated function of numerous covariance terms, therefore, we use 
+`emmeans` to obtain an asymptotic 95% confidence interval
+
+```{r}
+#| label: tbl-emmean_1
+#| tbl-cap: "Estiamted average MS for treated group one week post-baseline" 
+#| 
+emmeans(gee_1c_exchangeable, 
+        specs = c("time_weeks", "trtgroup"), 
+        at = list("time_weeks" = 1, "trtgroup" = "Drug")
+        ) %>% 
+  data.frame() %>%
+  mutate(ci = paste0("(", 
+                     asymp.LCL %>% round(., 2), 
+                     ", ", 
+                     asymp.UCL %>% round(., 2), 
+                     ")")) %>% 
+  select(emmean, ci) %>% 
+  kable(booktabs = T, 
+        digits = 2, 
+        col.names = c("Point Estimate", "95% Confidence Interval"), 
+        align = c('c', 'c')) %>% 
+  kable_styling(latex_options = "hold_position")
+  
+
+```
+
 ### (ii)
+
+
+Similarly, average MS levels at week one for a subject in the placebo group is given in terms of $\beta$ coefficients: 
+
+\begin{equation*}
+E[MS_{ij}] = \beta_0 + 4*\beta_1 
+\end{equation*}
+
+Or alternatively, 
+\begin{equation*}
+E[MS_{ij}] = 2.81 + 4*0.17  = 3.49
+\end{equation*}
+
+Variance of this point estimate is a complicated function of numerous covariance terms, therefore, we use 
+`emmeans` to obtain an asymptotic 95% confidence interval
+
+```{r}
+#| label: tbl-emmean_2
+#| tbl-cap: "Estiamted average MS for placebo group four weeks post-baseline" 
+#| 
+emmeans(gee_1c_exchangeable, 
+        specs = c("time_weeks", "trtgroup"), 
+        at = list("time_weeks" = 4, "trtgroup" = "Placebo")
+        ) %>% 
+  data.frame() %>%
+  mutate(ci = paste0("(", 
+                     asymp.LCL %>% round(., 2), 
+                     ", ", 
+                     asymp.UCL %>% round(., 2), 
+                     ")")) %>% 
+  select(emmean, ci) %>% 
+  kable(booktabs = T, 
+        digits = 2, 
+        col.names = c("Point Estimate", "95% Confidence Interval"), 
+        align = c('c', 'c')) %>% 
+  kable_styling(latex_options = "hold_position")
+  
+
+```
 
 ## 1 - E
 
 ### (i)
 
+<!--
+\begin{multiline}
+E[MS_{ij}] = \beta_0 + \beta_1 I(Time_{ij} = 4) + \beta_2 I(Time_{ij} = 12) + 
+              \beta_3 I(Treatment_{ij} = "Drug") + \\
+              \beta_4 I(Time_{ij} = 4) \times I(Treatment_{ij} = "Drug") + 
+              \beta_5 I(Time_{ij} = 12) \times I(Treatment_{ij} = "Drug")
+\end{multiline}
+--> 
+
+\begin{align*}
+    E[MS_{ij}]  &= \beta_0 + \beta_1 I(Time_{ij} = 4) + \beta_2 I(Time_{ij} = 12) + 
+              \beta_3 I(Treatment_{ij} = "Drug") + \\
+      &\beta_4 I(Time_{ij} = 4) \times I(Treatment_{ij} = "Drug") + 
+              \beta_5 I(Time_{ij} = 12) \times I(Treatment_{ij} = "Drug")
+\end{align*}
+
 ### (ii)
 
 **A**
 
+$\beta_3$ expresses the difference between treatment and control groups at one week. Therefore, given a regression 
+equation stated above, we can develop a hypothesis to test the effect of treatment at different follow up time points: 
+
+1. Null hypothesis: no difference between treatment assignment groups at every time point, i.e. $\large \beta_3 = \beta_4 = \beta_5 = 0$
+
+2. Alternative hypothesis: not all $\beta_i$ for $i = 3, 4, 5$ are equal to zero, i.e. average MS levels differ between the two groups at some time points. 
+
 **B**
+
+We estimate average MS levels at 4 weeks for the two groups separately. It is not exactly clear if given variables `mutpost`, `mut1mos`, `mut3mos` measure observed values of MS levels, or change in MS levels since baseline. We do not have a variable that measures MS levels at baseline, only 1 week after baseline. Therefore, I will assume that MS values at week 4 measure change from baseline to week 4. Average MS levels at 4 weeks for controls is:  
+
+\begin{align}
+E[MS_{ij} | Week = 4, Group = Placebo] &= \beta_0 + \beta_1  
+\end{align}
+
+Average MS levels at 4 weeks for treated are: 
+
+\begin{align}
+E[MS_{ij} | Week = 4, Group = Group] &= \beta_0 + \beta_1 + \beta_3 + \beta_4 
+\end{align}
 
 # Question 2 
 
 ## 2 - A
 
+Estimated parameters are not the same, therefore this 
+structure cannot be exchangeable. After a quick check, it looks like $0.2044^2 \neq 0.1936$, so we do 
+not have an AR-1 structure. Entries off-diagonal are not zero, therefore, we do not have an independence correlation structure. The only remaining choice of the four we commonly use is unstructured. 
+
+We have an unstructured working correlation. 
+
 ## 2 - B
+
+First, calculate the value of logit of probability post-baseline for control subjects: 
+
+\begin{align*}
+logit[P(Y_{ij} = 1 | Post_{ij} = 1, ICGroup_{ij} = 0)] &= 0.1676 - 0.3238 = -0.156
+\end{align*}
+
+Inverting the function, we obtain probability of correct answer among controls in the post-baseline period: 
+
+\begin{align*}
+P(Y_{ij} = 1 | Post_{ij} = 1, ICGroup_{ij} = 0) &= \frac{exp(-0.156)}{1 + exp(-0.156)} = 0.461
+\end{align*}
+
+Now, calculate the value of logit of probability post-baseline for treated subjects: 
+
+\begin{align*}
+logit[P(Y_{ij} = 1 | Post_{ij} = 1, ICGroup_{ij} = 1)] &= 0.1676 - 0.3238 -0.1599 + 1.0073 = 0.691
+\end{align*}
+
+Inverting the function, we obtain probability of correct answer among treated subjects in the post-baseline period: 
+
+\begin{align*}
+P(Y_{ij} = 1 | Post_{ij} = 1, ICGroup_{ij} = 1) &= \frac{exp(0.691)}{1 + exp(0.691)} = 0.666
+\end{align*}
 
 ## 2 - C
 
+In the presence of an interaction term, $\hat \beta_1$ is the effect of post-baseline period on the log-odds of 
+correctly answering the question among controls. On average, after adjusting for other predictors, the log-odds 
+of correctly answering the question in the post-baseline period were 0.3238 less than the log-odds among 
+controls in at the baseline visit. 
+
+Alternatively, the odds of a correct answer among controls were approximately 27% lower in the post-baseline 
+period when compared with the baseline visit, after adjusting for other predictors. 
+
 ## 2 - D
+
+log-odds ratio for the treated patients in the post-baseline period in terms of $\hat \beta_i$ coefficients is: 
+
+\begin{align*}
+\log[\frac{p}{1-p}] = \beta_0 + \beta_1 + \beta_2 + \beta_3
+\end{align*}
+
+log-odds ratio for the treated people at the baseline is: 
+
+\begin{align*}
+\log[\frac{p}{1-p}] = \beta_0 + \beta_2 
+\end{align*}
+
+Therefore, odds ratio, or log-odds ratio, or other comparison will be a function of $\beta_1$ and $\beta_3$ representing the effect of post-baseline time period and an additional effect specific to the treated subjects, respectively. 
+
+Thus, to calculate a 95% confidence interval we need variance of an estimator that depends on both $\beta_1$ and $\beta_3$, which are correlated. Covariance of $\beta_1$ and $\beta_3$ is a missing piece that we need for the 
+calculation of variance of an odds ratio for the comparison that we wish to perform. 
+
 
 ## 2 - E
 
+In the context of our problem, $exp(\beta_3)$ estimates the additional percentage increase in the odds of answering the question correctly for the treated population in the post-baseline period, after adjusting for other predictors. 
+
 ## 2 - F
 
+We have two predictors: treatment assignment, which is cluster invariant, and an indicator for the post-baseline
+time point, which is cluster variant. 
+
+Ignoring correlation will results in a smaller standard error estimate for the treatment assignment effect. Therefore, we will conduct anti-conservative inference, and detect effects which might not be truly statistically significant. 
+
+Ignoring correlation structure for the post-baseline indicator variable, we will ignore the nature of within-cluster variation of this variable, and will estimate standard errors that are higher than what it should be. 
+This will results in conservative inference and, potentially, inability to detect truly statistically significant effects. 
