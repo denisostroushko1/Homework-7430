@@ -240,6 +240,80 @@ compete. In the case with these data, there are 4 people with only 2 observation
 a small degree of imbalance and incompleteness in the data, which results in a small discrepancy between the estimates from the 
 independence and exchangeable correlation structures models. 
 
+For comparison, I imputed missing/incomplete values of MS values with average MS value for a given time point and group combination. This was done for the purpose of creating a complete data set. @tbl-comp shows the results of 
+running GEE models on a data set with equal number of observations in each cluster of data, therefore creating a 
+balanced and complete data set. Results of independence and exchangeable correlation structure-based models are 
+identification, further showing that the reason for the difference in our original data set is due to data structures of clusters. 
+
+```{r}
+#| label: tbl-comp
+#| tbl-cap: "Independece and Exchangeable correlation structures with imputed means of MS to create complete data" 
+dental_test <- 
+  dental %>% filter(trtgroup != "NoGum") %>% 
+  select(id, trtgroup, mutpost, mut1mos, mut3mos) %>% 
+  pivot_longer(
+    cols = c('mutpost', 'mut1mos', 'mut3mos'), 
+    names_to = "time_char", 
+    values_to = "MS"
+  ) %>% 
+  mutate(
+    time_weeks = case_when(time_char == "mutpost" ~ 1, 
+                           time_char == "mut1mos" ~ 4, 
+                           time_char == "mut3mos" ~ 12), 
+    trtgroup = factor(trtgroup, levels = c("Placebo", "Drug"))
+    
+  ) %>% 
+  arrange(id, time_weeks)
+
+dental_test %>% 
+  group_by(trtgroup, time_char) %>% 
+  summarise(impute_MS = mean(MS, na.rm = T)) -> impute 
+
+dental_test <- 
+  dental_test %>% 
+  left_join(impute, by = c("trtgroup", "time_char")) %>% 
+  mutate(
+    MS = case_when(is.na(MS) ~ impute_MS, 
+                   T ~ MS)
+  )
+
+gee_1c_independence2 <- geeglm(formula = MS ~ time_weeks*trtgroup, 
+                              data = dental_test,
+                              id = id, 
+                              corstr = "independence")
+
+gee_1c_exchangeable2 <- geeglm(formula = MS ~ time_weeks*trtgroup, 
+                              data = dental_test,
+                              id = id, 
+                              corstr = "exchangeable")
+
+
+pack_row_start = c(1,5)
+pack_row_end   = c(4,8)
+
+rbind(
+  summary(gee_1c_independence2)$coefficients %>% data.frame(),
+  summary(gee_1c_exchangeable2)$coefficients %>% data.frame()
+) %>% 
+  mutate(CI = paste0("(",
+                     round(Estimate - 1.96 * Std.err, 2), 
+                     ", ",
+                     round(Estimate + 1.96 * Std.err,2), 
+                     ")"
+                     ), 
+         covariate = rep(rownames(summary(gee_1c_independence2)$coefficients), 2)
+  ) %>% 
+  select(covariate, Estimate, CI, Pr...W..) %>% 
+  kable(row.names = F, 
+        digits = 2, 
+        col.names = c("Predictor Term", "Estiamte", "CI", "P-value"), 
+        align = c('l', 'c', 'c'),
+        booktabs = T) %>% 
+  pack_rows(group_label = "Independece Correlation", start_row = pack_row_start[1], end_row = pack_row_end[1]) %>% 
+  pack_rows(group_label = "Exchangeable Correlation", start_row = pack_row_start[2], end_row = pack_row_end[2]) %>% 
+  kable_styling()
+```
+
 ### (iii)
 
 ```{r}
@@ -376,17 +450,86 @@ equation stated above, we can develop a hypothesis to test the effect of treatme
 
 **B**
 
-We estimate average MS levels at 4 weeks for the two groups separately. It is not exactly clear if given variables `mutpost`, `mut1mos`, `mut3mos` measure observed values of MS levels, or change in MS levels since baseline. We do not have a variable that measures MS levels at baseline, only 1 week after baseline. Therefore, I will assume that MS values at week 4 measure change from baseline to week 4. Average MS levels at 4 weeks for controls is:  
+**Baseline to Four weeks change** 
 
-\begin{align}
-E[MS_{ij} | Week = 4, Group = Placebo] &= \beta_0 + \beta_1  
-\end{align}
+For this question, we assume that measurements at week one are the baseline levels: Therefore 
+average MS levels for treated at baseline is given by: 
+
+\begin{align*}
+E[MS_{i1} | Week = 1, Group = Drug] &= \beta_0 + \beta_3  
+\end{align*}
 
 Average MS levels at 4 weeks for treated are: 
 
-\begin{align}
-E[MS_{ij} | Week = 4, Group = Group] &= \beta_0 + \beta_1 + \beta_3 + \beta_4 
-\end{align}
+\begin{align*}
+E[MS_{i4} | Week = 4, Group = Drug] &= \beta_0 + \beta_1 + \beta_3 + \beta_4 
+\end{align*}
+
+Therefore, average change for treated is stated as 
+
+\begin{align*}
+E[MS_{i4} | Week = 4, Group = Drug] - E[MS_{i1} | Week = 1, Group = Drug]&= \beta_1 + \beta_4 
+\end{align*}
+
+Similarly, we estimate average MS levels for placebo group at baseline as 
+
+\begin{align*}
+E[MS_{i1} | Week = 1, Group = Placebo] &= \beta_0 
+\end{align*}
+
+Average MS levels at 4 weeks for placebo are: 
+
+\begin{align*}
+E[MS_{i4} | Week = 4, Group = Placebo] &= \beta_0 + \beta_1 
+\end{align*}
+
+Therefore, average change for treated is stated as 
+
+\begin{align*}
+E[MS_{i4} | Week = 4, Group = Placebo] - E[MS_{i1} | Week = 1, Group = Placebo]&= \beta_1 
+\end{align*}
+
+Therefore, we can state our hypothesis: 
+
+1. Null: there is no difference in average change from baseline to four weeks between treated and placebo groups, i.e. $\beta_4$ = 0
+
+2. Alternative: There is some difference in mean change from baseline to four weeks between the two groups, i.e.  $\beta_4 \neq$ 0
+
+**Four to Twelve Week Change**
+
+Average MS values at 12 weeks for treated are given by: 
+
+\begin{align*}
+E[MS_{i12} | Week = 12, Group = Drug] &= \beta_0 + \beta_2 + \beta_3 + \beta_5
+\end{align*}
+
+Average difference between treated at twelve weeks and four weeks is: 
+
+\begin{align*}
+E[MS_{i12} | Week = 12, Group = Drug] &- E[MS_{i4} | Week = 4, Group = Drug] = \\ 
+(\beta_0 + \beta_2 + \beta_3 + \beta_5) &- (\beta_0 + \beta_1 + \beta_3 + \beta_4 ) = \beta_2 + \beta_5 - \beta_1 -  \beta_4 
+\end{align*}
+
+Average MS value at 12 weeks for placebo group is given by: 
+
+\begin{align*}
+E[MS_{i12} | Week = 12, Group = Placebo] &= \beta_0 + \beta_2 
+\end{align*}
+
+Average difference between placebo at twelve weeks and four weeks is: 
+
+\begin{align*}
+E[MS_{i12} | Week = 12, Group = Placebo] &- E[MS_{i4} | Week = 4, Group = Placebo] = \\ 
+(\beta_0 + \beta_2 ) &- (\beta_0 + \beta_1 ) = \beta_2 -  \beta_1 
+\end{align*}
+
+The difference in two average changes is: $\large \beta_2 + \beta_5 - \beta_1 -  \beta_4 - \beta_2 +  \beta_1 = \beta_5- \beta_4$
+
+Therefore, we can state our hypothesis: 
+
+1. Null: there is no difference in average change from four to twelve weeks between treated and placebo groups, i.e. $\beta_5 = \beta_4$ = 0
+
+2. Alternative: There is some difference in mean change from baseline to four weeks between the two groups, i.e.  at least one of $\beta_5$ or $\beta_4$ are not zero 
 
 # Question 2 
 
