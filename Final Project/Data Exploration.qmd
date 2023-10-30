@@ -1,0 +1,330 @@
+---
+title: "Final Project Data Exploration"
+author: "Denis Ostroushko"
+format: pdf
+execute: 
+  echo: false
+  message: false
+  warning: false
+---
+
+```{r read in packages }
+#| results: hide
+#| include: false 
+path_main_folder = substr(getwd(), 1, nchar(getwd()) - nchar("Final Project"))
+
+source(paste0(path_main_folder, "Master Packages.R"))
+```
+
+```{r read and modify data}
+
+curran <- read_csv("CurranLong.csv", show_col_types = F)
+
+# id: child id - our cluster id 
+
+# Predictors in a model 
+  # kid gen - presumed kid sex: 0 = F, 1 = M - cluster invariant 
+  # mom age - cluster invariant 
+  # homecog - measure of home cognitive stimulation: seems cluster invariant (measured at time = 1, presumed baseline )
+  # homeemo - same 
+  # occasion - identify time points - cluster variant 
+  # kidagetv - time variant age measure: recorded for each new follow up measure time point 
+
+# outcomes: 
+  # read - primary outcome 
+  # anti - measure of anti social behavior - secondary outocme 
+```
+
+```{r verify cluster invariate-ness}
+
+curran %>% 
+  group_by(id) %>% 
+  summarise(N = n(), 
+            sex_c = length(unique(kidgen)), 
+            homecog_c = length(unique(homecog)), 
+            homeemo_c = length(unique(homeemo)),
+            
+            occ_c = length(unique(occasion)),
+            age_c = length(unique(kidagetv))
+            ) -> data_sum
+
+print("Distribution of Available time Points per subject")
+summary(data_sum$N)
+print("Most Subjects >= 3 time points, but data shows some imbalance")
+
+print("Distribution of Unique Counts of Homecog - confirmed cluster invariant variable")
+table(data_sum$homecog_c)
+
+print("Distribution of Unique Counts of Homeemo - confirmed cluster invariant variable")
+table(data_sum$homeemo_c)
+
+```
+
+# Primary Outcome 
+
+@fig-profile  shows: 
+
+  * Linear Trend in Reading ability against time 
+  * High degree of variation overall, variation increases as time goes on 
+
+```{r examine overall variabtion in the population for trend against follow up tme and kids ages}
+#| label: fig-profile 
+#| fig-cap: "Trend of Reading ability vs Follow Up Time and Kid's age" 
+#| fig-height: 8
+#| fig-width: 12
+grid.arrange(
+
+  ggplot(data = curran, 
+         mapping = aes(x = occasion, y = read)) + 
+    geom_point(aes(color = kidagetv)) + 
+    stat_smooth(method = "lm") + 
+    scale_color_gradientn(colors = rainbow(5)) + 
+    theme(legend.position = "bottom") + 
+    labs(x = "Follow Up Period", 
+         y = "Reading Score", 
+         color = "Kid's age"), 
+
+  
+  ggplot(data = curran, 
+         mapping = aes(x = kidagetv, y = read)) + 
+    geom_point(aes(color = as.factor(occasion))) + 
+    stat_smooth(method = "lm", color = "black", linetype = "dashed") +
+    stat_smooth(color = "black") +  
+    labs(x = "Kid's age", 
+         y = "Reading Score", 
+         color = "Follow up Time") + 
+    theme(legend.position = "bottom"), 
+  
+  nrow = 1
+)
+
+```
+
+@fig-profile-2 shows: 
+
+  * Likely a strong linear trend persists 
+  * Individual effect counts for a large portion of variation 
+  * Individual variation is strong in a setting with both time variant predictors 
+
+```{r examine individual variabtion in the population for trend against follow up tme and kids ages}
+#| label: fig-profile-2 
+#| fig-cap: "Trend of Reading ability vs Follow Up Time and Kid's age for Individuals" 
+#| fig-height: 8
+#| fig-width: 12
+grid.arrange(
+
+  ggplot(data = curran, 
+         mapping = aes(x = occasion, y = read, group = id)) + 
+    geom_line(alpha = 0.5, aes(color = id)) + 
+    stat_smooth(method = "lm", linetype = "dashed", color = "black", aes(group = 1)) + 
+    stat_smooth(linetype = "dashed", color = "black", aes(group = 1)) + 
+    scale_color_gradientn(colors = rainbow(5)) + 
+    theme(legend.position = "bottom") + 
+    labs(x = "Follow Up Period", 
+         y = "Reading Score", 
+         color = "ID of subject"), 
+
+  ggplot(data = curran, 
+         mapping = aes(x = kidagetv, y = read, group = id)) + 
+    geom_line(alpha = 0.5, aes(color = id)) + 
+    stat_smooth(method = "lm", color = "black", aes(group = 1)) + 
+    stat_smooth(linetype = "dashed", color = "black", aes(group = 1)) + 
+    scale_color_gradientn(colors = rainbow(5)) + 
+    theme(legend.position = "bottom") + 
+    labs(x = "Follow Up Period", 
+         y = "Reading Score", 
+         color = "ID of subject"), 
+  
+  nrow = 1
+)
+
+```
+
+@fig-profile-homeecog: hard t determine effect of `homecog` on the reading ability 
+
+```{r examine individual variabtion in the population for trend against follow up tme and kids ages}
+#| label: fig-profile-homeecog
+#| fig-cap: "Trend of Reading ability by Homecog Score" 
+#| fig-height: 8
+#| fig-width: 12
+grid.arrange(
+
+  ggplot(data = curran, 
+         mapping = aes(x = occasion, y = read, group = id)) + 
+    geom_line(alpha = 0.5, aes(color = homecog)) + 
+    stat_smooth(method = "lm", linetype = "dashed", color = "black", aes(group = 1)) + 
+    stat_smooth(linetype = "dashed", color = "black", aes(group = 1)) + 
+    scale_color_gradientn(colors = rainbow(5)) + 
+    theme(legend.position = "bottom") + 
+    labs(x = "Follow Up Period", 
+         y = "Reading Score", 
+         color = "Home Cog Score"), 
+
+  ggplot(data = curran, 
+         mapping = aes(x = read, group = homecog, fill = homecog)) + 
+    geom_histogram() + 
+    scale_fill_gradientn(colors = rainbow(5)) , 
+  
+  nrow = 1
+)
+
+```
+
+
+```{r}
+#| label: fig-home-predictors
+#| fig-cap: "Relationship between Baseline Home variables and Reading ability" 
+#| fig-height: 8
+#| fig-width: 12
+grid.arrange(
+  ggplot(data = curran, 
+       aes(x = homecog, y = read)) + 
+  geom_point(aes(color = as.factor(occasion))) + 
+  geom_smooth() + 
+  theme(legend.position = "bottom"), 
+  
+  ggplot(data = curran, 
+       aes(x = homeemo, y = read)) + 
+  geom_point(aes(color = as.factor(occasion))) + 
+  geom_smooth() + 
+  theme(legend.position = "bottom"),
+  
+  nrow = 1
+)
+```
+
+# Secondary Outcome 
+
+```{r }
+ 
+#| fig-height: 8
+#| fig-width: 12
+grid.arrange(
+
+  ggplot(data = curran, 
+         mapping = aes(x = occasion, y = anti)) + 
+    geom_point(aes(color = kidagetv)) + 
+    stat_smooth(method = "lm") + 
+    scale_color_gradientn(colors = rainbow(5)) + 
+    theme(legend.position = "bottom") + 
+    labs(x = "Follow Up Period", 
+         y = "Antisocial Score", 
+         color = "Kid's age"), 
+
+  
+  ggplot(data = curran, 
+         mapping = aes(x = kidagetv, y = anti)) + 
+    geom_point(aes(color = as.factor(occasion))) + 
+    stat_smooth(method = "lm", color = "black", linetype = "dashed") +
+    stat_smooth(color = "black") +  
+    labs(x = "Kid's age", 
+         y = "Antisocial Score", 
+         color = "Follow up Time") + 
+    theme(legend.position = "bottom"), 
+  
+  nrow = 1
+)
+
+```
+
+
+```{r }
+
+#| fig-height: 8
+#| fig-width: 12
+grid.arrange(
+
+  ggplot(data = curran, 
+         mapping = aes(x = occasion, y = anti, group = id)) + 
+    geom_line(alpha = 0.5, aes(color = id)) + 
+    stat_smooth(method = "lm", linetype = "dashed", color = "black", aes(group = 1)) + 
+    stat_smooth(linetype = "dashed", color = "black", aes(group = 1)) + 
+    scale_color_gradientn(colors = rainbow(5)) + 
+    theme(legend.position = "bottom") + 
+    labs(x = "Follow Up Period", 
+         y = "Antisocial Score", 
+         color = "ID of subject"), 
+
+  ggplot(data = curran, 
+         mapping = aes(x = kidagetv, y = anti, group = id)) + 
+    geom_line(alpha = 0.5, aes(color = id)) + 
+    stat_smooth(method = "lm", color = "black", aes(group = 1)) + 
+    stat_smooth(linetype = "dashed", color = "black", aes(group = 1)) + 
+    scale_color_gradientn(colors = rainbow(5)) + 
+    theme(legend.position = "bottom") + 
+    labs(x = "Follow Up Period", 
+         y = "Antisocial Score", 
+         color = "ID of subject"), 
+  
+  nrow = 1
+)
+
+```
+
+```{r }
+
+#| fig-height: 8
+#| fig-width: 12
+grid.arrange(
+
+  ggplot(data = curran, 
+         mapping = aes(x = occasion, y = anti, group = id)) + 
+    geom_line(alpha = 0.5, aes(color = homecog)) + 
+    stat_smooth(method = "lm", linetype = "dashed", color = "black", aes(group = 1)) + 
+    stat_smooth(linetype = "dashed", color = "black", aes(group = 1)) + 
+    scale_color_gradientn(colors = rainbow(5)) + 
+    theme(legend.position = "bottom") + 
+    labs(x = "Follow Up Period", 
+         y = "Antisocial Score", 
+         color = "Home Cog Score"), 
+
+  ggplot(data = curran, 
+         mapping = aes(x = anti, group = homecog, fill = homecog)) + 
+    geom_histogram() + 
+    scale_fill_gradientn(colors = rainbow(5)) , 
+  
+  nrow = 1
+)
+
+```
+
+
+```{r}
+
+#| fig-height: 8
+#| fig-width: 12
+grid.arrange(
+  ggplot(data = curran, 
+       aes(x = homecog, y = anti)) + 
+  geom_point(aes(color = as.factor(occasion))) + 
+  geom_smooth() + 
+  theme(legend.position = "bottom"), 
+  
+  ggplot(data = curran, 
+       aes(x = homeemo, y = anti)) + 
+  geom_point(aes(color = as.factor(occasion))) + 
+  geom_smooth() + 
+  theme(legend.position = "bottom"),
+  
+  nrow = 1
+)
+```
+
+\newpage
+
+# Conclusions 
+
+* Might want to use mixed effects model to account for a large amount of individual variation 
+
+* `Homecog` and `Homeemo` might have a weak effect, but after accounting for individual random effect, they might be significant 
+after all 
+
+* No visual evidence that we need to consider higher order predictors, no apparent non-linear trends 
+
+* Variance increases as time increases, we will consider a poisson, or some other model to account for this effect of variance 
+
+* Antisocial scores vary quite a lot in the population
+
+* As HOME variables increase, antisocial score decreases 
+
+* Antisocial score fluctuates quite a lot, however, it seems that on average it is higher for kids with lower HOME variables scores

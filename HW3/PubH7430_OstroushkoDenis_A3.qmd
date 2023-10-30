@@ -527,7 +527,7 @@ The difference in two average changes is: $\large \beta_2 + \beta_5 - \beta_1 - 
 
 Therefore, we can state our hypothesis: 
 
-1. Null: there is no difference in average change from four to twelve weeks between treated and placebo groups, i.e. $\beta_5 = \beta_4$ = 0
+1. Null: there is no difference in average change from four to twelve weeks between treated and placebo groups, i.e. $\beta_5 - \beta_4$ = 0, or, $\beta_5 = \beta_4$
 
 2. Alternative: There is some difference in mean change from baseline to four weeks between the two groups, i.e.  at least one of $\beta_5$ or $\beta_4$ are not zero 
 
