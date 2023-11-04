@@ -140,7 +140,43 @@ grid.arrange(
 
 ```
 
-@fig-profile-homeecog: hard t determine effect of `homecog` on the reading ability 
+@fig-profile-3 shows trend in reading ability by mom's age. Seems that older mom's, on average, have greater intercept for reading ability, but similar slope 
+
+```{r examine individual variabtion in the population for trend against follow up tme and kids ages by moms age}
+#| label: fig-profile-3
+#| fig-cap: "Trend of Reading ability vs Follow Up Time and Kid's age for Individuals" 
+#| fig-height: 8
+#| fig-width: 12
+grid.arrange(
+
+  ggplot(data = curran, 
+         mapping = aes(x = occasion, y = read, group = id)) + 
+    geom_line(alpha = 0.5, aes(color = momage)) + 
+    stat_smooth(method = "lm", linetype = "dashed", color = "black", aes(group = 1)) + 
+    stat_smooth(linetype = "dashed", color = "black", aes(group = 1)) + 
+    scale_color_gradientn(colors = rainbow(5)) + 
+    theme(legend.position = "bottom") + 
+    labs(x = "Follow Up Period", 
+         y = "Reading Score", 
+         color = "ID of subject"), 
+
+  ggplot(data = curran, 
+         mapping = aes(x = kidagetv, y = read, group = id)) + 
+    geom_line(alpha = 0.5, aes(color = momage)) + 
+    stat_smooth(method = "lm", color = "black", aes(group = 1)) + 
+    stat_smooth(linetype = "dashed", color = "black", aes(group = 1)) + 
+    scale_color_gradientn(colors = rainbow(5)) + 
+    theme(legend.position = "bottom") + 
+    labs(x = "Follow Up Period", 
+         y = "Reading Score", 
+         color = "ID of subject"), 
+  
+  nrow = 1
+)
+
+```
+
+@fig-profile-homeecog: hard to determine effect of `homecog` on the reading ability 
 
 ```{r examine individual variabtion in the population for trend against follow up tme and kids ages}
 #| label: fig-profile-homeecog
@@ -195,6 +231,34 @@ grid.arrange(
 
 # Secondary Outcome 
 
+transforming anti-social behavior to the logarithmic scale 
+
+```{r}
+curran$log_anti <- log(curran$anti + 1)
+```
+
+```{r }
+
+#| fig-height: 8
+#| fig-width: 12
+grid.arrange(
+
+  ggplot(data = curran, 
+         mapping = aes(x = anti, group = homecog, fill = homecog)) + 
+    geom_histogram() + 
+    scale_fill_gradientn(colors = rainbow(5)) , 
+
+  ggplot(data = curran, 
+         mapping = aes(x = log_anti, group = homecog, fill = homecog)) + 
+    geom_histogram() + 
+    scale_fill_gradientn(colors = rainbow(5)) , 
+  
+  nrow = 1
+)
+
+```
+
+
 ```{r }
  
 #| fig-height: 8
@@ -202,7 +266,7 @@ grid.arrange(
 grid.arrange(
 
   ggplot(data = curran, 
-         mapping = aes(x = occasion, y = anti)) + 
+         mapping = aes(x = occasion, y = log_anti)) + 
     geom_point(aes(color = kidagetv)) + 
     stat_smooth(method = "lm") + 
     scale_color_gradientn(colors = rainbow(5)) + 
@@ -211,9 +275,8 @@ grid.arrange(
          y = "Antisocial Score", 
          color = "Kid's age"), 
 
-  
   ggplot(data = curran, 
-         mapping = aes(x = kidagetv, y = anti)) + 
+         mapping = aes(x = kidagetv, y = log_anti)) + 
     geom_point(aes(color = as.factor(occasion))) + 
     stat_smooth(method = "lm", color = "black", linetype = "dashed") +
     stat_smooth(color = "black") +  
@@ -235,7 +298,7 @@ grid.arrange(
 grid.arrange(
 
   ggplot(data = curran, 
-         mapping = aes(x = occasion, y = anti, group = id)) + 
+         mapping = aes(x = occasion, y = log_anti, group = id)) + 
     geom_line(alpha = 0.5, aes(color = id)) + 
     stat_smooth(method = "lm", linetype = "dashed", color = "black", aes(group = 1)) + 
     stat_smooth(linetype = "dashed", color = "black", aes(group = 1)) + 
@@ -246,7 +309,7 @@ grid.arrange(
          color = "ID of subject"), 
 
   ggplot(data = curran, 
-         mapping = aes(x = kidagetv, y = anti, group = id)) + 
+         mapping = aes(x = kidagetv, y = log_anti, group = id)) + 
     geom_line(alpha = 0.5, aes(color = id)) + 
     stat_smooth(method = "lm", color = "black", aes(group = 1)) + 
     stat_smooth(linetype = "dashed", color = "black", aes(group = 1)) + 
@@ -268,7 +331,7 @@ grid.arrange(
 grid.arrange(
 
   ggplot(data = curran, 
-         mapping = aes(x = occasion, y = anti, group = id)) + 
+         mapping = aes(x = occasion, y = log_anti, group = id)) + 
     geom_line(alpha = 0.5, aes(color = homecog)) + 
     stat_smooth(method = "lm", linetype = "dashed", color = "black", aes(group = 1)) + 
     stat_smooth(linetype = "dashed", color = "black", aes(group = 1)) + 
@@ -279,7 +342,7 @@ grid.arrange(
          color = "Home Cog Score"), 
 
   ggplot(data = curran, 
-         mapping = aes(x = anti, group = homecog, fill = homecog)) + 
+         mapping = aes(x = log_anti, group = homecog, fill = homecog)) + 
     geom_histogram() + 
     scale_fill_gradientn(colors = rainbow(5)) , 
   
@@ -295,13 +358,13 @@ grid.arrange(
 #| fig-width: 12
 grid.arrange(
   ggplot(data = curran, 
-       aes(x = homecog, y = anti)) + 
+       aes(x = homecog, y = log_anti)) + 
   geom_point(aes(color = as.factor(occasion))) + 
   geom_smooth() + 
   theme(legend.position = "bottom"), 
   
   ggplot(data = curran, 
-       aes(x = homeemo, y = anti)) + 
+       aes(x = homeemo, y = log_anti)) + 
   geom_point(aes(color = as.factor(occasion))) + 
   geom_smooth() + 
   theme(legend.position = "bottom"),
