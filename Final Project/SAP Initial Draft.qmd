@@ -1,0 +1,397 @@
+---
+title: "Final Project Data Exploration"
+author: "Denis Ostroushko"
+format: pdf
+execute: 
+  echo: false
+  message: false
+  warning: false
+---
+
+```{r read in packages }
+#| results: hide
+#| include: false 
+path_main_folder = substr(getwd(), 1, nchar(getwd()) - nchar("Final Project"))
+
+source(paste0(path_main_folder, "Master Packages.R"))
+```
+
+```{r read and modify data}
+
+curran <- read_csv("CurranLong.csv", show_col_types = F)
+
+# id: child id - our cluster id 
+
+# Predictors in a model 
+  # kid gen - presumed kid sex: 0 = F, 1 = M - cluster invariant 
+  # mom age - cluster invariant 
+  # homecog - measure of home cognitive stimulation: seems cluster invariant (measured at time = 1, presumed baseline )
+  # homeemo - same 
+  # occasion - identify time points - cluster variant 
+  # kidagetv - time variant age measure: recorded for each new follow up measure time point 
+
+# outcomes: 
+  # read - primary outcome 
+  # anti - measure of anti social behavior - secondary outocme 
+```
+
+
+Questions proposed by Erika are in \textcolor{red}{red}, my comments and suggestions are in \textcolor{black}{black}.
+
+# 1 
+
+\textcolor{red}{Which observations will be included in the analysis? It may be that your population of interest does not
+include everyone in the original data set you obtained. You should describe any exclusion criteria that
+you will apply.}
+
+### Looking for outliers in the data 
+
+@fig-prim-outliers-plot: primary outcome: reading scores: no outliers 
+
+```{r }
+#| label: fig-prim-outliers-plot
+#| fig-cap: "No Outliers in the primary outcome" 
+#| fig-width: 12
+#| fig-height: 8
+grid.arrange(
+  ggplot(curran, 
+         aes(x = read)) + geom_histogram() + theme_minimal(), 
+  ggplot(curran, 
+         aes(y = read)) + geom_boxplot(outlier.color = "red") + theme_minimal(), 
+  nrow = 1
+)
+
+```
+
+@fig-prim-outliers-plot-2: primary outcome: reading scores: some outliers that have higher than 'normal' scores in the early periods, then likely there individuals regress to the mean 
+
+```{r }
+#| label: fig-prim-outliers-plot-2
+#| fig-cap: "Some outliers in the early observation periods" 
+#| fig-width: 12
+#| fig-height: 8
+grid.arrange(
+  ggplot(curran, 
+         aes(x = read, 
+             group = as.factor(occasion), 
+             fill = as.factor(occasion)
+             )) + geom_histogram() + theme_minimal() + 
+    theme(legend.position = "bottom"), 
+  ggplot(curran, 
+         aes(y = read, 
+             group = as.factor(occasion), 
+             fill = as.factor(occasion)
+             )) + geom_boxplot(outlier.color = "red") + theme_minimal() + 
+    theme(legend.position = "bottom"), 
+  nrow = 1
+)
+
+```
+
+@fig-outliers : yes, there are outliers, which are 'natural', and we will not do anything abut them. 
+
+```{r}
+#| label: fig-outliers 
+#| fig-cap: "Profile of IDs that are outliers on the boxplot at any point. They regress to the mean" 
+#| fig-width: 12
+#| fig-height: 8
+mean_out_data <- 
+  curran %>% 
+    group_by(occasion) %>% 
+    summarize(q1 = quantile(read, 0.25, na.rm = T), 
+              q3 = quantile(read, 0.75, na.rm = T), 
+              mean = mean(read, na.rm = T)) %>% 
+    mutate(upper_tr = q3 + 1.5 * (q3 - q1)) %>% 
+    select(occasion, upper_tr, mean)
+
+curran %>% 
+  left_join(
+    mean_out_data,
+    by = c("occasion")
+  ) %>% 
+  
+  filter(read >= upper_tr) %>% 
+  select(id) %>% unique() %>% unlist() -> any_timepoint_outliers
+
+grid.arrange(
+  curran %>% 
+    left_join(
+      mean_out_data,
+      by = c("occasion")
+    ) %>% 
+    filter(id %in% any_timepoint_outliers) %>% 
+    
+    ggplot(aes(x = occasion, y = read, group = id)) + geom_line() + theme_minimal() + 
+    geom_point(aes(x = occasion, y = mean), color = "red", size = 3), 
+  
+  curran %>% 
+    left_join(
+      mean_out_data,
+      by = c("occasion")
+    ) %>% 
+    filter(id %in% any_timepoint_outliers) %>% 
+    mutate(ratio = read/mean) %>% 
+    
+    ggplot(aes(x = occasion, y = ratio, group = id)) + geom_line() + theme_minimal() + 
+    geom_hline(yintercept = 1, color = "red", size = 1), 
+  
+  nrow = 1
+)
+
+```
+
+# 2 
+
+\textcolor{red}{Will any transformations (e.g., log) be applied to the data prior to carrying out the analysis?
+Additionally, it should be clear how each variable will be treated in your analysis (e.g. binary,
+continuous, categorical) and whether each predictor is cluster variant or invariant.}
+
+### Primary outcome 
+
+No transformation required to the primary outcome.
+
+### Secondary outcome 
+
+@fig-secndary-outcome : highly skewed outcome. Consider log-10 transformation, since highest value of 10 will become 1, which is 
+convenient. 
+
+```{r }
+#| label: fig-secndary-outcome 
+#| fig-cap: "Some outliers in the early observation periods" 
+#| fig-width: 12
+#| fig-height: 8
+grid.arrange(
+  ggplot(curran, 
+         aes(x = anti, 
+             group = as.factor(occasion), 
+             fill = as.factor(occasion)
+             )) + geom_histogram() + theme_minimal() + 
+    theme(legend.position = "bottom"), 
+  ggplot(curran, 
+         aes(x = log10(anti+1), 
+             group = as.factor(occasion), 
+             fill = as.factor(occasion)
+             )) + geom_histogram() + theme_minimal() + 
+    theme(legend.position = "bottom"), 
+  nrow = 1
+)
+
+```
+
+# 3 
+
+\textcolor{red}{What regression methods will be used?
+a. Regression type (GLM/GEE/mixed models)
+b. Family (Gaussian/Binomial/Poisson/Gamma/etc.)
+c. Link/variance function
+d. Effects of interest
+e. Any adjustment variables included}
+
+### A - Primary Outcome
+
+*Suggest using GEE since our primary predictor is cluster invariant*
+
+**Details:**
+
+@fig-profile-2: trend of reading score against follow p occasion and child age: looks like there is high variance 
+in individual intercepts. 
+
+Random slopes: not so clear. Some profiles, in purple, seem to have strong linear trend and low variation within 
+the cluster. *Should we consider random slopes?* Perhaps. This can be a hypothesis to test. It is really hard to determine this 
+due to the large number of individual clusters in the data. 
+
+Ultimately, we want to test the effect of a cluster invariant covariate, so GEE might be a little more appropriate. 
+We also have a large number of clusters, `r length(unique(curran$id))`, so sandwich variance estimator may be useful here 
+to correct for any incorrect assumptions that we make. 
+
+```{r examine individual variabtion in the population for trend against follow up tme and kids ages}
+#| label: fig-profile-2 
+#| fig-cap: "Trend of Reading ability vs Follow Up Time and Kid's age for Individuals" 
+#| fig-height: 8
+#| fig-width: 12
+grid.arrange(
+
+  ggplot(data = curran, 
+         mapping = aes(x = occasion, y = read, group = id)) + 
+    theme_minimal() + 
+    geom_line(alpha = 0.5, aes(color = id)) + 
+    stat_smooth(method = "lm", linetype = "dashed", color = "black", aes(group = 1)) + 
+    stat_smooth(linetype = "dashed", color = "black", aes(group = 1)) + 
+    scale_color_gradientn(colors = rainbow(5)) + 
+    theme(legend.position = "bottom") + 
+    labs(x = "Follow Up Period", 
+         y = "Reading Score", 
+         color = "ID of subject"), 
+
+  ggplot(data = curran, 
+         mapping = aes(x = kidagetv, y = read, group = id)) + 
+    theme_minimal() + 
+    geom_line(alpha = 0.5, aes(color = id)) + 
+    stat_smooth(method = "lm", color = "black", aes(group = 1)) + 
+    stat_smooth(linetype = "dashed", color = "black", aes(group = 1)) + 
+    scale_color_gradientn(colors = rainbow(5)) + 
+    theme(legend.position = "bottom") + 
+    labs(x = "Child Age", 
+         y = "Reading Score", 
+         color = "ID of subject"), 
+  
+  nrow = 1
+)
+
+```
+
+### A - Secondary Outcome
+
+**GEE might not be useful since we just wont detect any significant effects to intepret** 
+
+On the other hand, a Random Effects Model can show that a between cluster variation accounts for the majority of variation in the 
+data. We wtill probably will not find any interesting fixed effects, but will be able to show that there is significant amount of 
+variation in the data, and it should be explained different predictors. 
+
+```{r }
+#| label: fig-profile-secondary
+#| fig-cap: "Trend of Reading ability vs Follow Up Time and Kid's age for Individuals" 
+#| fig-height: 8
+#| fig-width: 12
+grid.arrange(
+
+  ggplot(data = curran, 
+         mapping = aes(x = occasion, y = log10(anti+1), group = id)) + 
+    theme_minimal() + 
+    geom_line(alpha = 0.5, aes(color = id)) + 
+    stat_smooth(method = "lm", linetype = "dashed", color = "black", aes(group = 1)) + 
+    stat_smooth(linetype = "dashed", color = "black", aes(group = 1)) + 
+    scale_color_gradientn(colors = rainbow(5)) + 
+    theme(legend.position = "bottom") + 
+    labs(x = "Follow Up Period", 
+         y = "log10 Anti Social Score", 
+         color = "ID of subject"), 
+
+  ggplot(data = curran, 
+         mapping = aes(x = kidagetv, y = log10(anti+1), group = id)) + 
+    theme_minimal() + 
+    geom_line(alpha = 0.5, aes(color = id)) + 
+    stat_smooth(method = "lm", color = "black", aes(group = 1)) + 
+    stat_smooth(linetype = "dashed", color = "black", aes(group = 1)) + 
+    scale_color_gradientn(colors = rainbow(5)) + 
+    theme(legend.position = "bottom") + 
+    labs(x = "Child Age", 
+         y = "log10 Anti Social Score", 
+         color = "ID of subject"), 
+  
+  nrow = 1
+)
+
+```
+
+### B 
+
+Outcome is positive values, which are not integers. Some of them are close to zero. We can use Gaussian with log link, or 
+Gamma with log link. Whatever one we select, it is important to use log-link to make sure that our regression model 
+does not have negative fitted values. 
+
+### C 
+
+see **B**
+
+### D 
+
+primary effect of interest: effect of the measure of emotional and cognitive stimulation at home on the reading ability. 
+This value is measured at baseline and therefore is a cluster invariant covariate. We will consider their marginal effects as well as the interaction between the two. 
+
+As a secondary outcome, we consider anti-social behavior measured using a 0-10 scale. We convert these scores to the log-10 scale, 
+and investigate the effect of at home emotional and cognitive stimulation on the anti-social behavior. 
+
+### E 
+
+Other adjustment variables: 
+
+1. Mom's age: speculatively, higher age can be a proxy measure for varying access to parental resources, money, more time to spend with the family due to already advanced stage of a career, etc... 
+
+2. Kid's age: clearly older children should have higher levels of reading scores 
+
+3. Kid's gender/sex: a binary predictor 
+
+# 4 
+
+\textcolor{red}{What assumptions will be made in fitting these models?
+a. (for GEE) Working correlation(s)
+b. (for mixed models) Random intercepts/slopes}
+
+### 4 - A 
+
+**Primary Outcome** 
+
+Choice of correlation might not be important, since we have a very large sample for sandwich to work its magic. 
+
+Based on printed correlation matrix below, pick either AR1 or banded, since observations that are further apart in time are 
+less correlated. 
+
+```{r}
+
+curran %>% 
+  select(id, read, occasion) %>% 
+  pivot_wider(
+    names_prefix = "occ_", 
+    names_from = 'occasion', 
+    values_from = 'read') %>% 
+  select(-id) %>% 
+  as.matrix() -> values
+
+cor(values, use = "pairwise.complete.obs")
+
+hist(cor(values, use = "pairwise.complete.obs") )
+
+corrplot::corrplot( cor(values, use = "pairwise.complete.obs"),
+                    type = "lower",
+                    is.corr = T)
+
+
+```
+
+**Secondary Outcome**
+
+This correaltion structure looks exchangable to me. 
+
+```{r}
+
+curran %>% 
+  select(id, anti, occasion) %>% 
+  pivot_wider(
+    names_prefix = "occ_", 
+    names_from = 'occasion', 
+    values_from = 'anti') %>% 
+  select(-id) %>% 
+  as.matrix() -> values
+
+cor(values, use = "pairwise.complete.obs")
+
+hist(cor(values, use = "pairwise.complete.obs") )
+
+corrplot::corrplot( cor(values, use = "pairwise.complete.obs"),
+                    type = "lower",
+                    is.corr = T)
+
+
+```
+
+### 4 - B 
+
+For sure, we need to use random intercepts. Might need to use random slopes, however, effectiveness of this modeling choice 
+is not apparent here. 
+
+# 5 
+
+\textcolor{red}{How will p-values and confidence intervals be computed?
+a. What will be used as the level of statistical significance?
+b. (Mixed models) Packages/options used in R/SAS for testing fixed and random effects. Note this
+can be included in your final report, but does not need to be included in your SAP as we
+won’t have spent much time talking about this yet when you are writing your SAP.}
+
+### 5 -A 
+
+No multiple comparisons here, just use $\alpha = 0.05$. 
+
+will use geepack + emmeans + ggplot or 
+
+lme4 + lmeTest + emmeans + ggplot 
