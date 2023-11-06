@@ -63,7 +63,7 @@ grid.arrange(
 
 ```
 
-@fig-prim-outliers-plot-2: primary outcome: reading scores: some outliers that have higher than 'normal' scores in the early periods, then likely there individuals regress to the mean 
+@fig-prim-outliers-plot-2: primary outcome: reading scores: some outliers that have higher than 'normal' scores in the early periods, then likely these individuals regress to the mean 
 
 ```{r }
 #| label: fig-prim-outliers-plot-2
@@ -88,7 +88,7 @@ grid.arrange(
 
 ```
 
-@fig-outliers : yes, there are outliers, which are 'natural', and we will not do anything abut them. 
+@fig-outliers : yes, there are outliers, which are 'natural', and we will not do anything about them. 
 
 ```{r}
 #| label: fig-outliers 
@@ -152,11 +152,11 @@ No transformation required to the primary outcome.
 
 ### Secondary outcome 
 
-@fig-secndary-outcome : highly skewed outcome. Consider log-10 transformation, since highest value of 10 will become 1, which is 
-convenient. 
+@fig-secondary-outcome : highly skewed outcome. Consider log-10 transformation, since highest value of 10 will become 1, which is 
+convenient. Still, the outcome is skewed. 
 
 ```{r }
-#| label: fig-secndary-outcome 
+#| label: fig-secondary-outcome 
 #| fig-cap: "Some outliers in the early observation periods" 
 #| fig-width: 12
 #| fig-height: 8
@@ -189,7 +189,27 @@ e. Any adjustment variables included}
 
 ### A - Primary Outcome
 
-*Suggest using GEE since our primary predictor is cluster invariant*
+```{r}
+
+message = 
+  data.frame(
+    gee = c("GEE Pro: Will get approximately correct standard errors for effects using sandwich variance estimator", 
+            "GEE Pro: We focus on marginal effects, time-variant effects are not of primary interest to us", 
+            "GEE Con: might be less efficient, C.I. could be too wide", 
+            ""), 
+    re = c("RE Pro: Can account for individual effects, in slope and intercept, which can explain most of variation", 
+           "RE Con: random effects may account for more variation than fixed effects. Fixed effects are primary focus here", 
+           "RE Pro: IF we indeed have an exchangeable correlation structure, we can have more efficient variance estimates", 
+           "RE Con: Random Effects might not be fitting the distributional assumptions well")
+  )
+
+kable(message, col.names = c("GEE Model", "Random Effects Model")) %>% 
+  column_spec(1:2, width = "8cm") %>% 
+  row_spec(0, bold = TRUE)
+
+```
+
+
 
 **Details:**
 
@@ -242,10 +262,10 @@ grid.arrange(
 
 ### A - Secondary Outcome
 
-**GEE might not be useful since we just wont detect any significant effects to intepret** 
+**GEE might not be useful since we just wont detect any significant effects to interpret** 
 
 On the other hand, a Random Effects Model can show that a between cluster variation accounts for the majority of variation in the 
-data. We wtill probably will not find any interesting fixed effects, but will be able to show that there is significant amount of 
+data. We will probably will not find any interesting fixed effects, but will be able to show that there is significant amount of 
 variation in the data, and it should be explained different predictors. 
 
 ```{r }
@@ -351,7 +371,8 @@ corrplot::corrplot( cor(values, use = "pairwise.complete.obs"),
 
 **Secondary Outcome**
 
-This correaltion structure looks exchangable to me. 
+This is raw correlation from the data. Looks like it it appropriate to estimate just one parameter for this matrix and go 
+with exchangeable correlation structure. Average off-diagonal correlation is 0.4988736, which represents raw values adequately. 
 
 ```{r}
 
@@ -386,7 +407,7 @@ is not apparent here.
 a. What will be used as the level of statistical significance?
 b. (Mixed models) Packages/options used in R/SAS for testing fixed and random effects. Note this
 can be included in your final report, but does not need to be included in your SAP as we
-won’t have spent much time talking about this yet when you are writing your SAP.}
+wont have spent much time talking about this yet when you are writing your SAP.}
 
 ### 5 -A 
 
