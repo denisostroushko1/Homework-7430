@@ -1,0 +1,362 @@
+---
+title: "Homework 4"
+author: "Denis Ostroushko"
+format: pdf
+execute: 
+  echo: false
+  message: false
+  warning: false
+---
+
+```{r read in packages }
+#| results: hide
+#| include: false 
+path_main_folder = substr(getwd(), 1, nchar(getwd()) - nchar("HW3"))
+
+source(paste0(path_main_folder, "Master Packages.R"))
+```
+
+# Question 1 
+
+```{r}
+vit_e <- read_csv("vitaminE-1.csv")
+```
+
+## 1 - A 
+
+@fig-spah shows desired plot. For a small number of clusters, the trend appears to be similar for a small number of them. 
+
+```{r}
+#| label: fig-spah
+#| fig-cap: "Individual Trends with the population average linear and smooth trends"
+
+ggplot(data = vit_e, 
+       aes(x = timemonths, y = vite, group = id)) + 
+  theme_minimal() + 
+  geom_line(alpha = 0.5) + 
+  geom_smooth(aes(group = 1), color = "red", se = T, size = 1) + 
+  geom_smooth(aes(group = 1), color = "blue", se = F, size = 1, method = "lm") + 
+  labs(x = "Months post baseline", 
+       y = "Vitamin E levels") + 
+  scale_x_continuous(breaks = seq(from = 0, to =9, by = 3))
+  
+
+```
+
+## 1 - B 
+
+```{r}
+naive_lm <- lm(vite ~ timemonths, data = vit_e)
+
+summary(naive_lm)$coefficients %>% 
+  kable(booktabs = T, 
+        digits = 2, 
+        align = 'c') %>% 
+  kable_styling(latex_options = 'hold_position')
+
+summary(naive_lm)$coefficients[rownames(summary(naive_lm)$coefficients) == "timemonths", ]["Estimate"] -> est_1
+direction <- ifelse(sign(est_1) == 1, "incresase", "decrease")
+est_1_show = round(abs(est_1), 2)
+
+summary(naive_lm)$coefficients[rownames(summary(naive_lm)$coefficients) == "timemonths", ]["Std. Error"] -> est_2
+
+confint(naive_lm)[rownames(confint(naive_lm)) == "timemonths"] %>% 
+  round(., 2) %>% 
+  paste0(., collapse = ", ") %>% 
+  paste0("(", ., ")") -> confint_1
+
+significace_1 <- summary(naive_lm)$coefficients[rownames(summary(naive_lm)$coefficients) == "timemonths",]["Pr(>|t|)"]
+signif_1 = ifelse(significace_1 >= 0.05, 
+                   "interval includes 0, there is no evidence of a statistically significant association", 
+                   "interval does not include 0, there is strong evidence of a statistically significant association")
+
+```
+
+
+For each additional follow up visit we saw an average `r est_1_show` 
+`r direction` in the Vitamin E $\mu$g/dl levels. Standard error is `r round(est_2, 2)`.
+Effect is bounded by a `r confint_1` 95% confidence interval,
+`r signif_1` between three months of additional time and vitamin E levels.
+
+## 1 - C 
+
+```{r}
+good_model <- lmer(vite ~ timemonths + (1 | id), data = vit_e)
+
+summary(good_model)[["coefficients"]] %>% 
+  kable(booktabs = T, 
+        digits = 2, 
+        align = 'c') %>% 
+  kable_styling(latex_options = 'hold_position')
+
+summary(good_model)[["coefficients"]][rownames(
+  summary(good_model)[["coefficients"]]) == "timemonths", ]["Estimate"] -> est_1
+
+direction <- ifelse(sign(est_1) == 1, "incresase", "decrease")
+est_1_show = round(abs(est_1), 2)
+
+summary(good_model)[["coefficients"]][rownames(
+  summary(good_model)[["coefficients"]]) == "timemonths", ]["Std. Error"] -> est_2
+
+confint(good_model)[rownames(confint(good_model)) == "timemonths"] %>% 
+  round(., 2) %>% 
+  paste0(., collapse = ", ") %>% 
+  paste0("(", ., ")") -> confint_1
+
+```
+
+For each additional follow up visit we saw an average `r est_1_show` 
+`r direction` in the Vitamin E level in $\mu$g/dl levels. Standard error is `r round(est_2, 2)`.
+Effect is bounded by a `r confint_1` 95% confidence interval. There is strong statistical evidence that 
+for the average subject, 
+as the amount of time since baseline increases, expected Vitamin E levels levels decrease. 
+
+## 1 - D 
+
+Time since baseline is a cluster varying covariate. Failing to account for an existing correlation structure 
+leads to an inflated standard errors, higher p-values, and wider confidence intervals. We end up performing 
+conservative statistical inference, which may prevent us from discovering a statistically significant 
+fixed effect. 
+
+## 1 - E 
+
+```{r}
+
+id_re_var  <- 1.2827^2
+Residual_re_var <- 0.625^2
+
+id_re_sd <- 1.2827
+Residual_re_sd <- 0.6256
+
+```
+
+Variance between subjects is `r round(id_re_var, 2)`, and variance within subjects, within individual clusters, 
+is `r round(Residual_re_var, 2)`. This means that there is much more differences between clusters, rather than
+the difference between the cluster specific average and observed data points. 
+
+This means that using Random Effects model is the right choice since subject specific random intercept helps
+us account for the majority of variance in the data set. We saw visual hits of this conclusion on @fig-spah. 
+
+## 1 - F 
+
+```{r}
+model_c <- lmer(vite ~ timemonths + (timemonths|id), data = vit_e)
+
+summary(model_c)[["coefficients"]] %>% 
+  kable(booktabs = T, 
+        digits = 2, 
+        align = 'c') %>% 
+  kable_styling(latex_options = 'hold_position')
+
+summary(model_c)[["coefficients"]][rownames(
+  summary(model_c)[["coefficients"]]) == "timemonths", ]["Estimate"] -> est_1
+
+direction <- ifelse(sign(est_1) == 1, "incresase", "decrease")
+est_1_show = round(abs(est_1), 2)
+
+summary(model_c)[["coefficients"]][rownames(
+  summary(model_c)[["coefficients"]]) == "timemonths", ]["Std. Error"] -> est_2
+
+confint(model_c)[rownames(confint(model_c)) == "timemonths"] %>% 
+  round(., 2) %>% 
+  paste0(., collapse = ", ") %>% 
+  paste0("(", ., ")") -> confint_1
+```
+
+For each additional follow up visit we saw an average `r est_1_show` 
+`r direction` in the Vitamin E level in $\mu$g/dl levels. Standard error is `r round(est_2, 2)`.
+Effect is bounded by a `r confint_1` 95% confidence interval. There is strong statistical evidence that for the average subject, 
+as the amount of time since baseline increases, expected Vitamin E levels levels decrease. 
+
+
+## 1 - G
+
+```{r}
+(logLik(good_model) - logLik(model_c))[1] * (-2) -> test_stat
+
+0.5*pchisq(test_stat, df = 0, lower = F) + 0.5*pchisq(test_stat, df = 1, lower = F) -> p_val
+
+```
+
+* Null Hypothesis: $\large \mu_{ij} = \textbf{x}_{ij}^T \boldsymbol{\beta} + \textbf{b}_{i}$
+  - where $b_i$ represents individual random intercept 
+
+* Alternative Hypothesis: $\large \mu_{ij} = \textbf{x}_{ij}^T \boldsymbol{\beta} + \textbf{b}_{i} + \textbf{c}_{i} * \textbf{z}_{ij}$
+  - $c_i$ represents individual random slope effect 
+  
+* Test Statistic:  `r round(test_stat, 2)`
+
+* Null distribution: a mixture distribution $\large \chi^2_{1:2}$
+
+* P-value: `r round(p_val, 4)`
+
+* Conclusion: p-value is greater that 0.05, which does not provide us with enough statistical evidence to 
+reject null hypothesis and conclude that the variance of random slope term is not zero. 
+
+* Interpretation: @fig-spah shows that the  profiles of clusters, and their trends, are similar. Therefore, 
+it might not be reasonable to fit individual lines with varying slopes for each cluster, since it does not hep us 
+explain more variance in the data set. Statistical test confirms that it might not be reasonable to 
+fit a more complex model. 
+
+# Question 2 
+
+```{r}
+seiz <- read_csv("progabide-1.csv")
+```
+
+```{r}
+#| eval: false
+
+seiz_cor <- 
+  seiz %>% 
+  select(subject, seizures, visit) %>% 
+  pivot_wider(
+              names_from = "visit", 
+              values_from = seizures) %>% 
+  select(-subject)
+
+cor(seiz_cor)
+mean(cor(seiz_cor)[cor(seiz_cor) != 1])
+sd(cor(seiz_cor)[cor(seiz_cor) != 1])
+
+cor(seiz_cor) - mean(cor(seiz_cor)[cor(seiz_cor) != 1])
+
+## use exchangeable 
+```
+
+## 2 - A 
+
+### 2 - A - (i) 
+
+```{r}
+model_2a_gee <- geeglm(formula = seizures ~ visit*trt, 
+                              data = seiz,
+                              id = subject, 
+                              family = poisson(link = "log"), 
+                              corstr = "exchangeable")
+
+summary(model_2a_gee)[["coefficients"]]
+```
+
+### 2 - A - (ii)
+
+```{r}
+summary(model_2a_gee)[["coefficients"]] %>% 
+  mutate(exp_estiamte = exp(Estimate) %>% round(., 1), 
+         exp_ci = paste0("(", 
+                         exp(Estimate - 1.96 * Std.err) %>% round(., 2),
+                         ", ", 
+                         exp(Estimate + 1.96 * Std.err) %>% round(., 2),
+                         ")"
+                         )) %>% 
+  select(exp_estiamte, exp_ci, Wald, `Pr(>|W|)`) %>% 
+  kable(booktabs = T, 
+        col.names = c("Exp. Coefficient", "95% CI", "Wald", "Pr(>|W|)") , 
+        digits = 2, 
+        align = 'c') %>% 
+  kable_styling(latex_options = 'hold_position')
+```
+
+### 2 - A - (iii)
+
+## 2 - B 
+
+### 2 - B - (i) 
+
+```{r}
+model_2b <- glmer(seizures ~ visit*trt + (1|subject), 
+                  family = poisson(link = "log"), 
+                  data = seiz,
+                  nAGQ=50)
+
+# summary(model_2b)
+```
+
+### 2 - B - (ii)
+
+```{r}
+
+summary(model_2b)[["coefficients"]] %>% 
+  data.frame() %>% 
+  mutate(exp_estiamte = exp(Estimate) %>% round(., 1), 
+         exp_ci = paste0("(", 
+                         exp(Estimate - 1.96 * `Std..Error`) %>% round(., 2),
+                         ", ", 
+                         exp(Estimate + 1.96 * `Std..Error`) %>% round(., 2),
+                         ")"
+                         )) %>% 
+  select(exp_estiamte, exp_ci, `z.value`, `Pr...z..`) %>% 
+  kable(booktabs = T, 
+        col.names = c("Exp. Coefficient", "95% CI", "Z", "Pr(>|W|)") , 
+        digits = 2, 
+        align = 'c') %>% 
+  kable_styling(latex_options = 'hold_position')
+```
+
+### 2 - B - (iii)
+
+## 2 - C 
+
+## 2 - D
+
+```{r}
+#| label: fig-spah_just_1
+#| fig-cap: "Individual Trends with the population average linear and smooth trends"
+#| fig-height: 6
+#| fig-width: 8
+
+ggplot(data = seiz, 
+       aes(x = visit, y = log(seizures+1), group = subject)) + 
+  theme_minimal() + 
+  geom_line(alpha = 0.5) + 
+  geom_smooth(aes(group = 1), color = "red", se = T, size = 1) + 
+  geom_smooth(aes(group = 1), color = "blue", se = F, size = 1, method = "lm")
+  
+
+```
+
+```{r warning=FALSE}
+#| label: fig-spah_just_2
+#| fig-cap: "Individual Trends with the population average linear and smooth trends"
+#| fig-height: 6
+#| fig-width: 8
+
+ggplot(data = seiz, 
+       aes(x = visit, y = log(seizures+1), group = subject)) + 
+  theme_minimal() + 
+  geom_line(alpha = 0.25) + 
+  geom_smooth(aes(color = subject), se = F, size = 1, method = "lm") + 
+  scale_color_gradientn(colors = rainbow(3))
+  
+
+```
+
+```{r warning=FALSE}
+#| label: fig-spah_just_3
+#| fig-cap: "Individual Trends with the population average linear and smooth trends"
+#| fig-height: 6
+#| fig-width: 8
+
+ggplot(data = seiz, 
+       aes(x = visit, y = log(seizures+1), group = subject)) + 
+  theme_minimal() + 
+  geom_line(alpha = 0.25) + 
+  geom_smooth(aes(color = as.factor(trt)), se = F, size = 1, method = "lm")
+  
+
+```
+
+```{r warning=FALSE}
+#| label: fig-spah_just_4
+#| fig-cap: "Individual Trends with the population average linear and smooth trends"
+#| fig-height: 6
+#| fig-width: 8
+
+ggplot(data = seiz, 
+       aes(x = visit, y = log(seizures+1), group = subject)) + 
+  theme_minimal() + 
+  geom_line(alpha = 0.25) + 
+  geom_smooth(aes(color = as.factor(trt), group = trt), se = F, size = 1, method = "lm")
+  
+
+```

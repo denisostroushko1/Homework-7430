@@ -35,6 +35,21 @@ curran <- read_csv("CurranLong.csv", show_col_types = F)
   # anti - measure of anti social behavior - secondary outocme 
 ```
 
+```{r}
+#| eval: false 
+geeglm(read ~ homecog * homeemo + kidgen + momage + kidage, 
+       data = na.omit(curran), 
+       id = id, 
+       corstr = "exchangeable", 
+       family = gaussian(link = "log")) %>% summary()
+
+geeglm(read ~ homecog * homeemo + kidgen + momage + kidage, 
+       data = curran, 
+       id = id, 
+       corstr = "exchangeable", 
+       family = gaussian(link = "log")) %>% summary()
+
+```
 
 Questions proposed by Erika are in \textcolor{red}{red}, my comments and suggestions are in \textcolor{black}{black}.
 
