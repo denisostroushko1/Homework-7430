@@ -38,7 +38,7 @@ ggplot(data = vit_e,
   geom_smooth(aes(group = 1), color = "blue", se = F, size = 1, method = "lm") + 
   labs(x = "Months post baseline", 
        y = "Vitamin E levels") + 
-  scale_x_continuous(breaks = seq(from = 0, to =9, by = 3))
+  scale_x_continuous(breaks = seq(from = 0, to = 9, by = 3))
   
 
 ```
@@ -228,19 +228,30 @@ cor(seiz_cor) - mean(cor(seiz_cor)[cor(seiz_cor) != 1])
 
 ### 2 - A - (i) 
 
+We are using a Poisson GEE model with a canonical log-link function. Mean model for the number of seizures is 
+given by: 
+
+\begin{align*}
+log(E(seizures_{ij})) &= \beta_0 + \beta_1 visit_{ij} + \beta_2 treatment_{ij} + \beta_3 visit_{ij} \times treatment_{ij}
+\end{align*}
+
 ```{r}
 model_2a_gee <- geeglm(formula = seizures ~ visit*trt, 
                               data = seiz,
                               id = subject, 
                               family = poisson(link = "log"), 
                               corstr = "exchangeable")
-
-summary(model_2a_gee)[["coefficients"]]
 ```
 
 ### 2 - A - (ii)
 
+@tbl-2a-gee-coef shows exponentiated coefficients, 95% end point transformed confidence interval, a Wald 
+statistic and a p-value for the test of main effect significance. 
+
 ```{r}
+#| label: tbl-2a-gee-coef
+#| tbl-cap: "Exponentiated Model Patameters" 
+#| 
 summary(model_2a_gee)[["coefficients"]] %>% 
   mutate(exp_estiamte = exp(Estimate) %>% round(., 1), 
          exp_ci = paste0("(", 
@@ -258,6 +269,8 @@ summary(model_2a_gee)[["coefficients"]] %>%
 ```
 
 ### 2 - A - (iii)
+
+* We fist focus on the significance of the interaction term
 
 ## 2 - B 
 
