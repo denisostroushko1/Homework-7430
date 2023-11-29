@@ -275,6 +275,87 @@ grid.arrange(
 
 ```
 
+```{r }
+#| label: fig-profile-2.2
+#| fig-cap: "Trend of Reading ability vs Follow Up Time and Kid's age for Individuals" 
+#| fig-height: 8
+#| fig-width: 12
+grid.arrange(
+
+  ggplot(data = curran, 
+         mapping = aes(x = homeemo, y = read, group = id)) + 
+    theme_minimal() + 
+    geom_point(alpha = 0.5, aes(color = homecog)) + 
+    stat_smooth(method = "lm", linetype = "dashed", color = "black", aes(group = 1)) + 
+    stat_smooth(linetype = "dashed", color = "black", aes(group = 1)) + 
+    scale_color_gradientn(colors = rainbow(5)) + 
+    theme(legend.position = "bottom") + 
+    labs(x = "Homeemo Score", 
+         y = "Reading Score", 
+         color = "Homecog Scoret"), 
+
+  ggplot(data = curran, 
+         mapping = aes(x = homecog, y = read, group = id)) + 
+    theme_minimal() + 
+    geom_point(alpha = 0.5, aes(color = homeemo)) + 
+    stat_smooth(method = "lm", color = "black", aes(group = 1)) + 
+    stat_smooth(linetype = "dashed", color = "black", aes(group = 1)) + 
+    scale_color_gradientn(colors = rainbow(5)) + 
+    theme(legend.position = "bottom") + 
+    labs(x = "Homecog Score", 
+         y = "Reading Score", 
+         color = "Homeemo Score"), 
+  
+  nrow = 1
+)
+```
+
+```{r }
+#| label: fig-profile-2.3
+#| fig-cap: "Trend of Reading ability vs Follow Up Time and Kid's age for Individuals" 
+#| fig-height: 8
+#| fig-width: 12
+grid.arrange(
+
+  ggplot(data = curran %>% mutate(homecog_cat = ifelse(homecog > median(homecog), "high", "low")), 
+         mapping = aes(x = homeemo, y = read, group = id)) + 
+    theme_minimal() + 
+    geom_point(alpha = 0.5, aes(color = as.factor(homecog_cat))) + 
+    stat_smooth(method = "lm", linetype = "dashed", aes(group = as.factor(homecog_cat))) + 
+  #  stat_smooth(linetype = "dashed", aes(group = as.factor(homecog_cat))) + 
+    theme(legend.position = "bottom") + 
+    labs(x = "Homeemo Score", 
+         y = "Reading Score", 
+         color = "Homecog Scoret"), 
+
+  ggplot(data = curran %>% mutate(homeemo_cat = ifelse(homeemo > median(homeemo), "high", "low")), 
+         mapping = aes(x = homecog, y = read, group = id)) + 
+    theme_minimal() + 
+    geom_point(alpha = 0.5, aes(color = homeemo_cat)) + 
+    stat_smooth(method = "lm", aes(group = as.factor(homeemo_cat), color = as.factor(homeemo_cat) )) + 
+  #  stat_smooth(linetype = "dashed", aes(group = as.factor(homeemo_cat))) + 
+    theme(legend.position = "bottom") + 
+    labs(x = "Homecog Score", 
+         y = "Reading Score", 
+         color = "Homeemo Score"), 
+  
+  nrow = 1
+)
+
+```
+
+```{r}
+#| eval: false 
+curran %>% mutate(homecog_cat = ifelse(homecog > median(homecog), "high", "low")) %>% 
+  group_by(homecog_cat, occasion) %>% 
+  summarise(
+    mean = mean(read, na.rm = T) #, 
+  #  sd = sd(read, na.rm = T)/sqrt(n())
+  ) %>% 
+  pivot_wider(values_from = mean, 
+              names_from = homecog_cat)
+```
+
 ### A - Secondary Outcome
 
 **GEE might not be useful since we just wont detect any significant effects to interpret** 
