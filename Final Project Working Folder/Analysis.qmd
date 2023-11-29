@@ -10,7 +10,7 @@ execute:
 ```{r}
 #| results: hide
 #| include: false 
-path_main_folder = substr(getwd(), 1, nchar(getwd()) - nchar("Final Project"))
+path_main_folder = substr(getwd(), 1, nchar(getwd()) - nchar("Final Project Working Folder"))
 
 source(paste0(path_main_folder, "Master Packages.R"))
 
