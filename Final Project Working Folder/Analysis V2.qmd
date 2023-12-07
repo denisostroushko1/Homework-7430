@@ -203,8 +203,12 @@ anova(fullest_model_time_v1) %>% tidy() %>% filter(p.value < 0.05) %>%
   select(term) %>% unlist() %>% 
   paste(., collapse = " + ") -> linear_predictor
 
+# model_formula <- as.formula(
+#   paste("read ~ kidgen +", linear_predictor,  " + homeemo:homecog")
+# )
+
 model_formula <- as.formula(
-  paste("read ~ kidgen +", linear_predictor,  " + homeemo:homecog")
+  paste("read ~ kidgen +", linear_predictor)
 )
 
 primary_analysis_model <- 
@@ -213,6 +217,9 @@ primary_analysis_model <-
        id = id, 
        corstr = "exchangeable", 
        family = gaussian(link = "identity"))
+
+
+primary_analysis_model %>% tidy() %>% mutate(p.value = round(p.value, 4)) %>% View()
 
 #################################
 # compare standard errors and efficiency of data use with and without homeemo:homecog interaction 
