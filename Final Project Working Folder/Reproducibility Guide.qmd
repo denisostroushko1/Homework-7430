@@ -1,0 +1,25 @@
+---
+title: "Reproducibility Guide"
+format: pdf
+execute: 
+  echo: false
+  message: false
+  warning: false
+header-includes: \usepackage{float}
+---
+
+1. Data set for this analysis was obtained in its original form. We did not modify the data, remove participants, or radically renamed variables in the data set. 
+
+2. All code for the analysis is contained within the `.qmd`. Same file was used to render the final output for submission. 
+
+3. Code chunk with explicit `, eval = F` or `non-evaluated` in the comment are work code files used by the team and are not a part of the final analysis
+
+4. The two analysis models were developed and stored in the analysis file. You may attempt to recreate the model using the `r  not-evaluated primary and secondary model development steps` chunk
+  
+    - note that the process of model development depends on the filtering of potential predictors based on their contribution to explanation of variance of the response 
+    
+    - in order to recreate the model in the form it was used for our analysis, you will need to run code in order, run the tests, execute parts that collect important predicotrs, store formula, estiamte model parameters, and save the output 
+    
+    - We performed these steps for you, and stored the results in the `***.rds` files 
+    
+5. If you are running into the issues with, you are likely lacking required elements of R-based software, such as packages, latex-related elements, or you are running the file from outside the analysis folder. In order to replicate our analysis, please follow our steps, and work from within the provided analysis folder. 

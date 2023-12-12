@@ -1,11 +1,12 @@
 ---
-title: "Analysis"
+title: "Effect of at Home Cognitive Stimulation and Emotional Support on Children’s Reading Ability"
 format: pdf
 execute: 
   echo: false
   message: false
   warning: false
 header-includes: \usepackage{float}
+fontsize: 10pt
 ---
 
 ```{R read in packges} 
@@ -38,18 +39,37 @@ curran <- read_csv("CurranLong.csv", show_col_types = F)
 curran <- curran %>% mutate(momage_tv = momage + occasion * 2)
 # id: child id - our cluster id 
 
+# Please review a 'Supplementary Data Overview and Dictionary.pdf' file in the provided project folder for additional descriptions # Data dictionary can be found on Page 12 of the referenced file. 
+
 # Predictors in a model 
   # kid gen - presumed kid sex: 0 = F, 1 = M - cluster invariant 
-  # mom age - cluster invariant 
-  # homecog - measure of home cognitive stimulation: seems cluster invariant (measured at time = 1, presumed baseline )
+  # mom age - cluster invariant, measured at baseline
+  # homecog - measure of home cognitive stimulation: seems cluster invariant (measured at occasion = 0, presumed baseline )
   # homeemo - same 
   # occasion - identify time points - cluster variant 
   # kidagetv - time variant age measure: recorded for each new follow up measure time point 
 
 # outcomes: 
-  # read - primary outcome 
+  # read - primary outcome - reading score 
   # anti - measure of anti social behavior - secondary outcome 
 ```
+
+# Abstract
+
+**Introduction**. Emotional and cognitive stimulation at home may be important factors influencing child development both academically and behaviorally, however these effects are poorly described.  To address this gap, we sought to define the association between emotional and cognitive stimulation at home on reading comprehension and antisocial behavior.  **Methods**. This study was a secondary analysis of data obtained from a subset of children aged 6 to 8 born to female participants in the National Longitudinal Survey of Youth (NLSY).  Our primary outcome was the child's reading comprehension score and secondary outcome was antisocial behavior at four time points.  Predictor variables were the cognitive and emotional stimulation at home.  We employed a Gaussian Generalized Estimating Equation (GEE) model with an identity link and an exchangeable correlation structure to investigate the impact of cognitive stimulation and emotional support on child development. **Results**.  A total of 405 children were enrolled in the study. Mean home cognitive stimulation is 8.89 (SD 2.58) and home emotional stimulation was 9.20 (SD 2.31) at baseline.  The mean reading score at baseline was 2.52 (SD: 0.92) and increased throughout follow-up.  Measures of antisocial behavior at baseline was 1.66 (SD: 1.66) and remained stable.  A one-unit increase in the cognitive stimulation for an average child with an emotional score of 0 corresponded to a 0.08 (95% CI: -0.01 to 0.18) increase in reading comprehension after adjusting for other predictors, which was not significant (P=0.08).  The similar effect of emotional stimulation was 0.05 (95% CI: -0.03 to 0.13) increase in reading score.  We have found no evidence that emotional support (P = 0.58) or cognitive stimulation (P=0.89) scores are statistically related to change in the antisocial behavior scores.  **Conclusion**. This study did not find evidence that cognitive stimulation or emotional support provided at home were associated with children's reading comprehension.  Well-designed and adequately powered observational studies will be necessary to further investigate this association. 
+
+# Introduction 
+
+Behavior and academic ability are important components of childhood development. Since both are believed to be impacted in part by the home environment (CPPRG, 1992; Patterson et al., 1992), a better understanding of these areas has the potential to help facilitate a positive home environment for child development. Specifically, emotional support and cognitive stimulation in the home may affect a child's readiness to learn in school (CPPRG, 1992), as can pre-existing behavior issues (Moffitt, 1990; Moffitt & Silva, 1988). This suggests that more emotional support and cognitive stimulation in the home could be associated with better academic ability and, potentially, fewer behavioral issues. Conversely, less emotional support and cognitive stimulation may lead to academic failure and behavioral issues that could be compounded by further alienation in the school setting (Patterson et al., 1992).
+We sought to use existing data to examine the association between children's emotional and cognitive stimulation in the home setting and the child's reading ability (as a measure of academic readiness) and, secondarily, antisocial behavior (as a measure of behavior problems). We had the following aims and hypotheses:
+
+* **Aim 1**: Determine the association between a child's emotional support at home and a child's reading ability.  We hypothesized that emotional support would be positively associated with reading ability.
+
+* **Aim 2**: Determine the association between children's cognitive stimulation at home and child's reading ability.  We hypothesized that cognitive stimulation would be positively associated with reading ability.
+
+* **Aim 3**: Determine whether there is interaction between a child's emotional support and cognitive stimulation and reading ability.  We hypothesized that emotional support and cognitive stimulation would have a synergistic effect on reading ability.
+
+* **Aim 4**: Determine whether a child's emotional support and cognitive stimulation influence the secondary outcome of antisocial behavior.  We hypothesized that emotional support and cognitive stimulation would be negatively associated with antisocial behavior.
 
 
 # Methods
@@ -70,13 +90,14 @@ The degree of cognitive stimulation provided to the child at home was assessed b
 
 ### Statistical methods 
 
-We employed a Gaussian Generalized Estimating Equation (GEE) model with an identity link and an exchangeable correlation structure to investigate the impact of cognitive stimulation and emotional support on child development. Reading scores and antisocial behavior scores were utilized as proxy measures for distinct facets of child development. Two distinct models were constructed for the primary and secondary outcomes, incorporating a variety of predictors and interaction terms. Candidate models underwent refinement through an ANOVA test utilizing Wald Statistics to discern the significance of predictors, after accounting for variation explained by other considered predictors. The selection and exclusion of model terms were guided by this statistical assessment. All analyses were performed using R version 4.3.1 (2023-06-16).
+We employed a Gaussian Generalized Estimating Equation (GEE) model with an identity link and an exchangeable correlation structure to investigate the impact of cognitive stimulation and emotional support on child development. Reading scores and antisocial behavior scores were utilized as proxy measures for distinct facets of child development. Two distinct models were constructed for the primary and secondary outcomes, incorporating a variety of predictors and interaction terms. Candidate models underwent refinement through an ANOVA test utilizing Wald Statistics to discern the significance of predictors, after accounting for variation explained by other considered predictors.  The selection and exclusion of model terms were guided by this statistical assessment.All models were fit using a complete case data analysis approach. We distinguish between non-observed reading or antisocial score, and explicitly missing data. Of 1,393 observations available for analysis, reading scores were missing at 68 distinct time points, and antisocial scores were missing at 23 distinct time points. Decision to perform a complete analysis was done based on the amount of available data. All analyses were performed using R version 4.3.1 (2023-06-16).
 
 
 # Results 
 
 ### Study Population 
 
+<!-- 
 ```{R flow chart creation , eval = F}
 
 flowchart <- grViz(" 
@@ -119,21 +140,23 @@ png_file <- "flowchart.png"
 rsvg::rsvg_png(svg_file, png_file, width = 1400, height = 1400)
 ```
 
-```{r}
-#| label: fig-flowchart
+```{r, eval = F}
+# label: fig-flowchart
 #| fig-cap: "It was possible for a child to be missing at one time point but be present at a later time point"
 knitr::include_graphics("flowchart.png")
 ```
-
+--> 
 This study examined a sample of children of female participants from the National Longitudinal Survey of Youth (NLSY). Beginning in 1986, extensive assessments were administered every other year to these children. At least one interview was obtained on 9,360 children. A much smaller number of children were included in this study.The selection criteria and number of participants are described in @fig-flowchart. Children were excluded from this study if they were not between the ages of 6 and 8 during the first wave of measurement, they did not have complete measures of interest at the first wave of measurement, or if they were a sibling of another child included in the study.  
 
 ### Descriptive Statistics 
 
 A total of 405 children were enrolled in the study.  203 (51%) were male and mean age was 6.92 (SD 0.63) at baseline.  Mean home cognitive stimulation is 8.89 (SD 2.58) and home emotional stimulation was 9.20 (SD 2.31) at baseline and both were similar throughout the visits.  All participants had baseline data recorded.  18 subjects were missing at first follow up, 104 at second follow up and 105 at the third follow up.  It was possible for children to be missing at one time point (after baseline) but be present at a later point in the study. Reading comprehension scores showed substantial change over the 6-year follow-up period @tbl-table-one. The mean reading score at baseline was 2.52 (sd: 0.92). The average reading score jumped to 4.08 (sd: 1.08) at the first follow-up, then increased more gradually at the second and third follow-ups (5.01 (sd:1.16) and 5.77 (sd: 1.25), respectively).  Measures of antisocial behavior remained relatively stable across the follow-up period (@tbl-table-one). Average antisocial behavior score at baseline was 1.66 (sd: 1.66) and only increased to 2.06 (sd: 2.15) by the third follow-up measurement. 
 
-```{r descriptive stats table one }
+<!-- 
+```{r descriptive stats table one , eval = F}
 #| results: hide 
 
+# create demog. and outcome summary table for the main text 
 CreateTableOne(
   data = curran, 
   strata = "occasion", 
@@ -153,9 +176,11 @@ print(table1, smd = TRUE, showAllLevels = F, varLabels = TRUE) -> table1_for_kab
 ```
 
 \renewcommand{\arraystretch}{2}
-```{r pretty version of table one }
-#| label: tbl-table-one
+```{r pretty version of table one, eval = F }
+# label: tbl-table-one
 #| tbl-cap: "Population summary at each follow up time point" 
+
+# print a fancy version of demog. and outcome summary table 
 
 rownames(table1_for_kable) <- c("N", "Reading Score (SD)", "Antisocial Score (SD)", "Child Age (SD)", "% Male",
                                 "Mom's Age", "Cognitive Stimulation (SD)", "Emotional Stimulation (SD)")
@@ -181,13 +206,13 @@ table1_for_kable %>%
 ```
 \renewcommand{\arraystretch}{1}
 
-<!-- 
+
 A total of 405 children were enrolled in the study.  203 (51%) were male and mean age was 6.92 (SD 0.63) at baseline.  Mean home cognitive stimulation is 8.89 (SD 2.58) and home emotional stimulation was 9.20 (SD 2.31) at baseline and both were similar throughout the visits.  All participants had baseline data recorded.  18 subjects were missing at first follow up, 104 at second follow up and 105 at the third follow up.  It was possible for children to be missing at one time point (after baseline) but be present at a later point in the study. Reading comprehension scores showed substantial change over the 6-year follow-up period @tbl-table-one. The mean reading score at baseline was 2.52 (sd: 0.92). The average reading score jumped to 4.08 (sd: 1.08) at the first follow-up, then increased. Average scores raised more gradually at the second and third follow-ups (5.01 (sd:1.16) and 5.77 (sd: 1.25), respectively).  Measures of antisocial behavior remained relatively stable across the follow-up period (Table 1).  Average antisocial behavior score at baseline was 1.66 (sd: 1.66) and only increased to 2.06 (sd: 2.15) by the third follow-up measurement. 
 --> 
 
 
 ```{r not evaluated plots, eval = F }
-#| label: fig-prim-outliers-plot-2
+# label: fig-prim-outliers-plot-2
 #| eval: false 
 #| fig-cap: "Some outliers in the early observation periods" 
 #| fig-width: 12
@@ -214,11 +239,12 @@ grid.arrange(
 ```{r not-evaluated primary and secondary model development steps, eval = F }
 #| eval: false 
 
-# predictor collinearity and usefullness of predictors
+# predictor collinearity and usefulness of predictors
 curran %>% 
   select(momage, momage_tv, kidage, kidagetv,homecog, homeemo, occasion, anti, read) %>% na.omit() %>% cor() %>% round(., 2)
 # use kidage at baseline and not time variant age die to collinearity issues. 
 
+#### STEP 1: develop a model with all possible interactions of considered predictors 
 fullest_model_time_v1 <- 
   geeglm(read ~ (homecog + homeemo + kidgen + kidage + occasion)^2, 
        data = na.omit(curran), 
@@ -226,6 +252,7 @@ fullest_model_time_v1 <-
        corstr = "exchangeable", 
        family = gaussian(link = "identity"))
 
+# test model terms using Wald statistic, only select statistically significant predictors for  parsimonious analysis model 
 anova(fullest_model_time_v1) %>% tidy() %>% filter(p.value < 0.05) %>% 
   select(term) %>% unlist() %>% 
   paste(., collapse = " + ") -> linear_predictor
@@ -234,10 +261,12 @@ anova(fullest_model_time_v1) %>% tidy() %>% filter(p.value < 0.05) %>%
 #   paste("read ~ kidgen +", linear_predictor,  " + homeemo:homecog")
 # )
 
+# also adjust for gender (sex really in the context of modern languge) of a given child 
 model_formula <- as.formula(
   paste("read ~ kidgen +", linear_predictor)
 )
 
+# develop the model for the primary analysis 
 primary_analysis_model <- 
   geeglm(model_formula, 
        data = na.omit(curran), 
@@ -245,12 +274,10 @@ primary_analysis_model <-
        corstr = "exchangeable", 
        family = gaussian(link = "identity"))
 
-
-primary_analysis_model %>% tidy() %>% mutate(p.value = round(p.value, 4)) %>% View()
-
 #################################
 # compare standard errors and efficiency of data use with and without homeemo:homecog interaction 
-
+{
+  # evaludate impact of model complexity on the standard errors and VIF 
 primary_analysis_model %>% tidy() %>% select(term, estimate, std.error) %>% 
   rename(estimate_no_int = estimate, 
          str.error_no_int = std.error) -> no_int
@@ -275,13 +302,17 @@ comp_ <- int %>%
 
 comp_ %>% 
   mutate(diff = str.error_int - str.error_no_int)
-
+}
 ############
 # store results 
-
 write_rds(primary_analysis_model, "primary model.rds")
 
-
+######## secondary model 
+# same steps as the primary model: 
+#     develop a model with all possible interactions 
+#     drop non-signficant 
+#     add must have predicots and interactions 
+#     store resutls and move on 
 fullest_model_time_v1 <- 
   geeglm(anti ~ (homecog + homeemo + kidgen + kidagetv + occasion)^2, 
        data = curran, 
@@ -336,12 +367,477 @@ REFORMAT TEXT:
 
 The main effects of emotional and cognitive stimulation quantify the baseline association between these scores and reading proficiency. We considered and tested interaction between the two effects. A one-unit increase in the cognitive score for an average child with an emotional score of 0 corresponded to a 0.08 (95% CI: -0.01 to 0.18) uptick in reading ability after adjusting for other predictors, hinting at some effect of cognitive scores on literacy skills, though not conclusively (P=0.08). For an average child with cognitive score of 0, the emotional support score's baseline impact on reading comprehension was 0.05. Every additional emotional support point yielded a 0.05 (95% CI: -0.03 to 0.13) rise in scores after adjusting for other predictors and cognitive stimulation score of 0, an influence not strongly linked to variation in reading outcomes (P=0.24). This suggests other modeled predictors better elucidate reading score variability.  The estimated interaction between emotional and cognitive scores at baseline was 0.00 (95% CI: -0.01 to 0.01) after adjusting for other predictors, offering no evidence that one predictor's effect changes across levels of the other (P=0.38).
 
+<!-- 
+```{r, eval = F}
+primary_analysis_model <- readRDS("primary model.rds")
+```
 
-```{r primary outcome model }
+```{r primary outcome model , eval = F}
+# label: tbl-prim-model-est
+#| tbl-cap: "Gaussian GEE Main Effects on Reading Comprehension Score" 
+primary_analysis_model <- readRDS("primary model.rds")
+
+## prepare regression model summary table 
+primary_analysis_model %>% tidy(conf.int = TRUE)  %>% 
+  mutate(
+    term_new  = c("(Intercept)", 		
+                  "Sex Male",				
+                  "Cog. Score", 				
+                  'Emo. Score',				
+                  'Age',				
+                  'Follow Up Period',				
+                  'Cog. Score * Follow Up Period',				
+                  'Emo. Score * Follow Up Period',				
+                  'Age * Follow Up Period',				
+                  'Cog. Score * Emo. Score'
+                  ), 
+    ci = paste0("(", 
+                round(conf.low, 2), 
+                ", ", 
+                round(conf.high, 2), 
+                ")"), 
+    signif = ifelse(p.value <= 0.05, "--", '')
+  )  %>% 
+  select(term_new, estimate, ci, p.value, signif) %>% 
+  kable(digits = 2, 
+        linesep = "\\addlinespace", 
+        align = c('l', 'c', 'c', 'c', 'c'), 
+        col.names = c("Model Term", "Estimate", "95% CI", "P-value", "Significance"), 
+        booktabs = T) %>% 
+  kable_styling(
+    latex_options = c("striped", "hover", "condensed", "HOLD_position")
+    ) %>% 
+  footnote(symbol = c("Terms with '*' denote interactions", 
+                      "Cog. Score = Cognitive Stimulation at Home Score", 
+                      "Emo. Score = Emotional Support at Home Score", 
+                      "Terms with '--' denote statistically significant predictors"))
+# 
+#   add_footnote("Terms with '*' denote interactions", notation = "Footnote Symbol 2") %>% 
+#   add_footnote("Cog. Score = Cognitive Stimulation at Home Score", notation = "Footnote Symbol 2") %>% 
+#   add_footnote("Emo. Score = Emotional Support at Home Score", notation = "Footnote Symbol 2") %>% 
+#   add_footnote("Terms with '--' denote statistically significant predictors", notation = "Footnote Symbol 2")
+
+```
+--> 
+
+
+<!-- 
+Original text: 
+
+Variation in reading scores is greatly explained by follow up period and age of a child at baseline.
+On average, reading scores improved by 2.03 (1.55 to 2.5 95% normal confidence interval) points with each follow up 
+period, verifying that as children age, they statistically get better at reading (P < 0.001). Additionally, on average, older children at baseline had higher reading scores (P < 0.001), as on extra year of age at baseline resulted in about 0.8 (0.67 to 0.93 95% confidence interval) increase in reading score. 
+
+However, the effect of age diminished at each additional follow up period. We estimate that the effect of age decreased by 
+0.19 [-0.19 bounded by (-0.25 to -0.12) 95% confidence interval] at each additional follow up period. There is strong statistical evidence (P < 0.001)  
+that as children grow older from ages between six and eight into early teenage years, initial observed differences in reading scores vanish over time. Visually, observed on @fig-prim-outliers-plot-2 that the spread of reading scores decreased at 
+additional follow up point.  
+
+REWORK: 
+ 
+
+Reading cognition scores were strongly associated with age at baseline. On average, reading scores rose by 2.03 (95% CI: 1.55 to 2.50) points per follow-up interval after adjusting for other predictors, affirming that literacy skills saw a statistically significant improvement with age over time (P<0.001). Additionally, older children initially showed markedly higher reading achievement (P<0.001). An extra baseline year corresponded with a 0.80 (95% CI: 0.67 to 0.93) higher score at baseline, after adjusting for other predictors. 
+
+REWORK 2: 
+-->
+
+We further investigated the main and interaction effects of age, time, emotional, and cognitive scores using regression effect plots. @fig-effect-time-by-age presents estimated reading score trajectories over time for children of varying baseline ages, selected per study inclusion criteria. The greatest difference in mean reading scores occurs at baseline (p-value associated with Age <0.001), with the youngest children displaying the steepest growth in reading skills on average (p-value associated with age-time interaction <0.001). By the third follow-up, children across all starting ages converge to more similar average reading score levels, as shown by visualized marginal effects of the model.
+
+<!-- 
+```{r main effect of time via age on reading score, eval = F}
+# label: fig-effect-time-by-age
+#| fig-cap: "Estimated Trajectories in Reading Scores Over time"
+#| fig-height: 3.5
+#| fig-width: 6
+#| 
+# main effect main model for interactions 
+
+# quantile(curran$kidage, c(0.25, 0.5, 0.75))
+
+plot_model(model = primary_analysis_model, 
+           type = "eff", 
+           terms = c("occasion", "kidage [6, 7, 8]")) + 
+  theme_minimal() + 
+  labs(x = "Follow Up Period", 
+       y = "Estimated Reading Score", 
+       color = "Child's Age at Baseline") + 
+  theme(legend.position = "bottom", 
+        legend.text = element_text(size = 8)) + 
+  ggtitle("Effect of Time and Baseline Age on Reading Scores")
+```
+
+```{r not evaluated - numbers for text, eval = F}
+#| eval: false 
+curran %>% 
+  group_by(homeemo) %>% 
+  summarise(ids = length(unique(id)), 
+            p_total = length(unique(id))/length(unique(curran$id)))
+
+curran %>% 
+  group_by(homecog) %>% 
+  summarise(ids = length(unique(id)), 
+            p_total = length(unique(id))/length(unique(curran$id)))
+
+summary(primary_analysis_model)
+vcov(primary_analysis_model)
+
+cog_adj_slope <- function(cog) {2.026182  + 0.01166 * cog }
+var_cog_adj_slope <- function(cog) {5.850e-02  + 7.020e-05 * cog^2 + 2 * cog * (-1.598e-04) }
+
+cog_adj_slope(7)
+
+cog_adj_slope(7) - 1.96 * sqrt(var_cog_adj_slope(7))
+cog_adj_slope(7) + 1.96 * sqrt(var_cog_adj_slope(7))
+
+cog_adj_slope(9)
+
+cog_adj_slope(9) - 1.96 * sqrt(var_cog_adj_slope(9))
+cog_adj_slope(9) + 1.96 * sqrt(var_cog_adj_slope(9))
+
+
+cog_adj_slope(11)
+
+cog_adj_slope(11) - 1.96 * sqrt(var_cog_adj_slope(11))
+cog_adj_slope(11) + 1.96 * sqrt(var_cog_adj_slope(11))
+
+summary(primary_analysis_model)
+vcov(primary_analysis_model)
+
+emo_adj_slope <- function(emo) {2.026182  + 0.02853 * emo }
+var_emo_adj_slope <- function(emo) {5.850e-02  + 7.17e-05 * emo^2 + 2 * emo * (-5.83e-04) }
+
+emo_adj_slope(8)
+emo_adj_slope(8) - 1.96 * sqrt(var_emo_adj_slope(8))
+emo_adj_slope(8) + 1.96 * sqrt(var_emo_adj_slope(8))
+
+emo_adj_slope(10)
+emo_adj_slope(10) - 1.96 * sqrt(var_emo_adj_slope(10))
+emo_adj_slope(10) + 1.96 * sqrt(var_emo_adj_slope(10))
+
+emo_adj_slope(12)
+emo_adj_slope(12) - 1.96 * sqrt(var_emo_adj_slope(12))
+emo_adj_slope(12) + 1.96 * sqrt(var_emo_adj_slope(12))
+
+```
+--> 
+
+
+<!-- 
+FIGURE 1 visualizes interactions between stimulation scores and learning rates over time. We selected sample 25th, 50th, and 75th
+quantiles of cognitive and emotional stimulation scores to show the effect of baseline score on the learning rates. 
+
+For an average child who had a cognitive stimulation score of 7 at baseline, corresponding to 25th percentile of all observed scores, expected two year change in the reading scores was 2.11 (1.63 to 2.59 95% CI). For comparison, the rate of change for an average child with a score of 9 at baseline was 2.13 (1.65 to 2.62 95% CI). An average child with a cognitive stimulation score of 11 had an average change in reading score of 2.15 (1.66 to 2.65 95% CI). These results might be suggestive that cognitive stimulation at baseline is improving the rate at which children learn to read, however, further research and data collection are required to make more definitive statements. 
+
+
+--> 
+
+
+```{r grid of trajectories by cog and emo at baseline, eval = F}
+#| eval: false
+# label: fig-main-effects-by-age
+#| fig-cap: "Values of Emotional and Cognitive Scores are chosen at 25th, 50th, and 75th sample percentiles" 
+#| fig-height: 4
+#| fig-width: 9
+# main effect main model for interactions 
+
+# quantile(curran$homecog, c(0.25, 0.5, 0.75))
+# quantile(curran$homeemo, c(0.25, 0.5, 0.75))
+
+# summary(curran$homecog)
+# summary(curran$homeemo)
+plot_model(model = primary_analysis_model, 
+           type = "eff", 
+           terms = c("occasion", "homecog [7, 9, 11]")) + 
+  theme_minimal() + 
+  labs(x = "Follow Up Period", 
+       y = "Reading Score", 
+       color = "Cognitive Stimulation Score") + 
+  ggtitle("") + 
+  theme(legend.position = "bottom", 
+        legend.text = element_text(size = 8)) -> p_left
+
+
+plot_model(model = primary_analysis_model, 
+           type = "eff", 
+           terms = c("occasion", "homeemo [8, 10, 12]")) + 
+  theme_minimal() + 
+  labs(x = "Follow Up Period", 
+       y = "Reading Score", 
+       color = "Emotional Stimulation Score") + 
+  ggtitle("") + 
+  theme(legend.position = "bottom", 
+        legend.text = element_text(size = 8)) -> p_right
+
+grid.arrange(p_left, p_right, nrow = 1)
+
+```
+
+### Secondary analysis: Antisocial behavior
+
+As a secondary outcome, we assessed the impact of emotional support and cognitive stimulation at home on antisocial behavior at baseline using Gaussian GEE model with exchangeable correlation structure. The results are presented in @tbl-sec-model-est. We have found no evidence that emotional support (P = 0.58) or cognitive stimulation (P=0.89) scores are statistically related to change in the antisocial behavior scores. Additionally, there is no evidence that the effect of cognitive scores varies at different levels of emotional scores (P = 0.36), and vice versa.
+
+
+<!--
+Antisocial behavior scores are a measure on the scale from 0 to 10, with 0 representing the lowest possible score. 
+We found that one unit increase in the emotional stimulation score was associated with an expected decrease of antisocial 
+score by 0.06 point (-0.28 to 015 95% confidence interval), after adjusting for other predictors. We estimate that one unit increase in cognitive scores resulted in 0.02 points (-0.21 to 0.24 95% confidence interval) increase in antisocial scores, after adjusting for other variables. Both estimates show a weak effect of two predictors on the antisocial score, with no statistical evidence of strong association. 
+
+--> 
+
+@tbl-sec-model-est presents other predictors that have stronger effects that help explain variability in the antisocial scores. 
+Similar to the reading score analysis, follow-up time period, age of a child at baseline and their interaction were strong predictors of antisocial behavior change and development. @fig-effect-time-by-age-sec presents marginal effects of follow up times on antisocial scores for children with varying baseline ages. It appears that, on average, younger children had lower baseline antisocial scores, which grew at a steeper rate over the course of six years. In contrast, the oldest children at baseline had approximately 25% higher antisocial scores, which did not change greatly over time.
+
+
+```{r}
+secondary_analysis_model <- readRDS("secondary model.rds")
+```
+<!-- 
+```{r secondary outcome model , eval = F}
+# label: tbl-sec-model-est
+#| tbl-cap: "Gaussian GEE Main Effects on Antisocial Behavioral Score" 
+#| 
+secondary_analysis_model <- readRDS("secondary model.rds")
+
+secondary_analysis_model %>% tidy(conf.int = TRUE)  %>% 
+  mutate(
+    term_new  = c('(Intercept)'				,
+                  'Sex Male'				,
+                  "Age", 
+                  'Cog. Score'				,
+                  'Emo. Score'				,
+                  'Follow Up Period'				,
+                  'Follow Up Period * Age'	,		
+                  'Cog. Score * Emo. Score'
+                  ), 
+    ci = paste0("(", 
+                round(conf.low, 2), 
+                ", ", 
+                round(conf.high, 2), 
+                ")"), 
+    signif = ifelse(p.value <= 0.05, "--", '')
+  )  %>% 
+  select(term_new, estimate, ci, p.value, signif) %>% 
+  kable(digits = 2, 
+        linesep = "\\addlinespace", 
+        align = c('l', 'c', 'c', 'c', 'c'), 
+        col.names = c("Model Term", "Estimate", "95% CI", "P-value", "Significance"), 
+        booktabs = T) %>%
+  kable_styling(
+    latex_options = c("striped", "hover", "condensed", "HOLD_position")
+    )  %>% 
+  footnote(symbol = c("Terms with '*' denote interactions", 
+                      "Cog. Score = Cognitive Stimulation at Home Score", 
+                      "Emo. Score = Emotional Support at Home Score", 
+                      "Terms with '--' denote statistically significant predictors"))
+
+```
+
+
+```{r non evaluated calculator for slopes , eval = F}
+#| eval: false 
+
+summary(secondary_analysis_model)
+vcov(secondary_analysis_model)
+
+slope_time_age <- function(x){(1.07475 + (-0.13655)*x) %>% round(., 2)}
+sd_time_age <- function(x){sqrt(0.1733453 + 3.588e-03*x^2 + 2 * x * (-0.0248406)) %>% round(., 2)}
+
+t <- 6
+slope_time_age(t) 
+slope_time_age(t) - 1.96 * sd_time_age(t)
+slope_time_age(t) + 1.96 * sd_time_age(t)
+
+t <- 7
+slope_time_age(t) 
+slope_time_age(t) - 1.96 * sd_time_age(t)
+slope_time_age(t) + 1.96 * sd_time_age(t)
+
+t <- 8
+slope_time_age(t) 
+slope_time_age(t) - 1.96 * sd_time_age(t)
+slope_time_age(t) + 1.96 * sd_time_age(t)
+
+```
+
+
+```{r}
+#| eval: false 
+
+# sanity check for marginal effects 
+
+curran %>% 
+  ggplot(aes(x = occasion, y = anti)) + 
+    geom_smooth(method = 'loess', aes(group = as.factor(floor(kidage)), 
+                                      color = as.factor(floor(kidage)))
+    )
+
+curran %>% 
+  ggplot(aes(x = occasion, y = anti)) + 
+    geom_smooth(method = 'lm', aes(group = as.factor(floor(kidage)), 
+                                      color = as.factor(floor(kidage)))
+    )
+```
+
+```{r}
+#| fig-height: 3.5
+#| fig-width: 6
+# label: fig-effect-time-by-age-sec
+#| fig-cap: "Estimated Antisocial Score Trajectories."
+#| 
+# main effect main model for interactions 
+
+# quantile(curran$kidage, c(0.25, 0.5, 0.75))
+
+plot_model(model = secondary_analysis_model, 
+           type = "eff", 
+           terms = c("occasion", "kidage [6, 7, 8]")) + 
+  theme_minimal() + 
+  labs(x = "Follow Up Period", 
+       y = "Estimated Antisocial Score", 
+       color = "Child's Age at Baseline") + 
+  theme(# legend.position = "bottom", 
+        legend.text = element_text(size = 8)) + 
+  ggtitle("Effect of Time and Baseline Age on Antisocial Scores")
+```
+--> 
+
+
+We also found an important effect of sex on the antisocial scores. We estimated the marginal effect of sex for males at 0.86 (95% CI: 0.58 to 1.14) compared to females, after adjusting for other factors. This factor has no statistically significant interactions with other predictors, we estimated constant differences between males and females in terms of their respective antisocial scores at all time points, while accounting for other variables. There is strong statistical evidence (P <0.001) that the average antisocial behavior score for males was at all times 0.86 points higher when compared to females.
+
+# Discussion 
+
+Overall, cognitive stimulation, emotional support, and the interaction between the two had very small, and largely statistically insignificant, effects on reading comprehension scores.   Unsurprisingly, the strongest predictors of reading scores were age (children who were older at baseline had better reading comprehension) and time (childcare's reading performance improved at later follow-up points). 
+
+According to estimates derived from our model, the average reading scores for children of all ages appear to converge to approximately the same level by the third follow-up time point. Notably, children who were six and eight years old at baseline would be twelve and fourteen years old, respectively, at this third follow-up point. The diminishing differences observed may suggest a reduction in the learning effect, with the majority of learning occurring during the earlier stages of the developmental process.
+
+It is important to reference the visualization provided by @fig-effect-time-by-age, which illustrates the average change in reading scores over time for children at different ages. By visually comparing the estimates at follow-up 2 for children aged eight years old at baseline and follow-up 3 for children aged six at baseline, we note that the ages of children in these two groups align at these respective follow-up points. Furthermore, the estimated average reading scores align as well. 
+
+This insight suggests that while the estimated learning rates may differ for varying ages, the average reading ability at a given age appears to be consistent. This observation underscores the importance of considering both the developmental trajectory and age-related variations when interpreting the dynamics of learning effects on reading scores. This analysis is prone to limitations, which are addressed later. 
+
+Moreover, our analysis revealed no statistically significant effect of the considered stimulation and support measures on the antisocial behavior of a child. In the realm of social relationships, the quest remains to identify interventions that consistently diminish these scores. Although we observed, on average, higher scores among males, our ability to elucidate the underlying reasons for this gender-based difference is constrained by the available data alone.
+
+To comprehensively contextualize these findings within the broader landscape of child development and propose actionable strategies, further scrutiny of existing research and acknowledgment of established methodologies are imperative. A more nuanced understanding of the multi factorial nature of antisocial behavior, including potential gender-specific patterns, will be instrumental in guiding the development of effective interventions aimed at fostering positive social outcomes for children.
+
+This study is subject to several potential limitations that may impact the robustness of our findings. Notably, cognitive stimulation and emotional support, integral variables in our analysis, relied on self-reports from parents. This introduces the possibility of measurement error, and the likelihood of this error being differential raises concerns. In other words, the accuracy of reporting cognitive stimulation and emotional support may have varied based on the child's reading ability. The presence of such differential measurement error has the potential to introduce bias in our results, making it challenging to ascertain its specific impact.
+
+A more accurate evaluation of these variables could have been achieved through assessments conducted by well-trained study staff. The data set's limitations, including its scope and the potential for substantial unmeasured confounding, further contribute to the complexity of interpreting our findings. The extent to which these limitations may have influenced our results remains unclear.
+
+Furthermore, it is crucial to recognize that learning is a multifaceted and continuous process requiring sustained effort and attention over time. While we assessed baseline emotional support and cognitive stimulation scores, our data set lacks information describing the persistence of these interventions over time. The absence of statistical evidence leaves room for speculation that a more dynamic monitoring approach may unveil stronger associations. In a prospective study, considering lagged effects of cognitive and emotional scores could provide insights into how stimulation and support at a given point in time influence reading and antisocial scores after six months or a year, for instance.
+
+The developmental trajectory of reading skills significantly shapes a child's future, empowering them with the necessary tools for growth and development. Consequently, future studies in this domain are vital, especially those focusing on optimal and dynamic treatment strategies to enhance our understanding of these complex associations.
+
+\newpage 
+
+# Tables and Figures 
+
+```{R flow chart creation 2, eval = F}
+
+flowchart <- grViz(" 
+digraph flowchart {
+
+# Graph style 
+graph [layout = dot] 
+node [shape = box] 
+edge [arrowhead = vee] 
+
+# Nodes 
+start [label='9,360 biological children\nof NLS Youth female respondents\ninterviewed between 1986 and 1992'] ineligible [label='8,955 not eligible for analysis \n(Not of reading age by first wave of measurement,\n incomplete data on all measures of interest at first wave of measurement, \nadditional siblings from the same family)']
+time1 [label='Time 1:\n405 children interviewed']
+time2 [label='Time 2:\n374 children interviewed']
+time3 [label='Time 3:\n294 children interviewed'] time4 [label='Time 4:\n221 children interviewed']
+
+# Edges 
+start -> time1
+time1 -> time2
+time2 -> time3 
+time3 -> time4 
+
+# Edge for ineligible node with an arrow
+start -> ineligible [style=dashed, constraint=false] 
+
+# A note at the bottom 
+labelloc = 'b'  }", engine = 'dot') 
+
+# Render the flowchart 
+print(flowchart) 
+
+svg <- export_svg(flowchart) 
+
+# # Write the SVG content to a file
+svg_file <- "flowchart.svg"
+writeLines(svg, con = svg_file)
+
+# Convert SVG to PNG
+png_file <- "flowchart.png"
+rsvg::rsvg_png(svg_file, png_file, width = 1400, height = 1400)
+```
+
+```{r}
+#| label: fig-flowchart
+#| fig-cap: "It was possible for a child to be missing at one time point but be present at a later time point"
+knitr::include_graphics("flowchart.png")
+```
+
+```{r descriptive stats table one 2}
+#| results: hide 
+
+# create demog. and outcome summary table for the main text 
+CreateTableOne(
+  data = curran, 
+  strata = "occasion", 
+  vars = c('read', 'anti', 'kidagetv', 'kidgen', 'momage_tv', 'homecog', 'homeemo'), 
+  factorVars = c('kidgen'),
+  
+  includeNA = T, 
+  test = F, 
+  smd = F, 
+  addOverall = F
+  
+) -> table1
+
+print(table1, smd = TRUE, showAllLevels = F, varLabels = TRUE) -> table1_for_kable
+
+
+```
+
+\renewcommand{\arraystretch}{2}
+```{r pretty version of table one 2}
+#| label: tbl-table-one
+#| tbl-cap: "Population summary at each follow up time point" 
+
+# print a fancy version of demog. and outcome summary table 
+
+rownames(table1_for_kable) <- c("N", "Reading Score (SD)", "Antisocial Score (SD)", "Child Age (SD)", "% Male",
+                                "Mom's Age", "Cognitive Stimulation (SD)", "Emotional Stimulation (SD)")
+
+nr <- nrow(table1_for_kable)
+
+table1_for_kable %>% 
+  kable(
+    linesep = "\\addlinespace", 
+    col.names = c("Baseline", "First Follow Up",  "Second Follow Up",  "Third Follow Up"), 
+    booktabs = T,
+    align = 'c'
+    ) %>% 
+  kable_styling(
+    latex_options = c("striped", "hover", "condensed", "HOLD_position"), 
+    font_size = 9
+    )  %>% 
+  # pack_rows(group_label = "Outcome Measures", start_row = 1, end_row = 2) %>% 
+  # pack_rows(group_label = "Predictors", start_row = 3, end_row = nr) %>% 
+  add_footnote("Cognitive and Emotional Stimulation Scores were recorded at baseline and do not vary with time", notation = "number")
+  
+
+```
+\renewcommand{\arraystretch}{1}
+
+
+```{r primary outcome model 2 }
 #| label: tbl-prim-model-est
 #| tbl-cap: "Gaussian GEE Main Effects on Reading Comprehension Score" 
 primary_analysis_model <- readRDS("primary model.rds")
 
+## prepare regression model summary table 
 primary_analysis_model %>% tidy(conf.int = TRUE)  %>% 
   mutate(
     term_new  = c("(Intercept)", 		
@@ -382,29 +878,9 @@ primary_analysis_model %>% tidy(conf.int = TRUE)  %>%
 #   add_footnote("Terms with '--' denote statistically significant predictors", notation = "Footnote Symbol 2")
 
 ```
-<!-- 
-Original text: 
 
-Variation in reading scores is greatly explained by follow up period and age of a child at baseline.
-On average, reading scores improved by 2.03 (1.55 to 2.5 95% normal confidence interval) points with each follow up 
-period, verifying that as children age, they statistically get better at reading (P < 0.001). Additionally, on average, older children at baseline had higher reading scores (P < 0.001), as on extra year of age at baseline resulted in about 0.8 (0.67 to 0.93 95% confidence interval) increase in reading score. 
 
-However, the effect of age diminished at each additional follow up period. We estimate that the effect of age decreased by 
-0.19 [-0.19 bounded by (-0.25 to -0.12) 95% confidence interval] at each additional follow up period. There is strong statistical evidence (P < 0.001)  
-that as children grow older from ages between six and eight into early teenage years, initial observed differences in reading scores vanish over time. Visually, observed on @fig-prim-outliers-plot-2 that the spread of reading scores decreased at 
-additional follow up point.  
-
-REWORK: 
- 
-
-Reading cognition scores were strongly associated with age at baseline. On average, reading scores rose by 2.03 (95% CI: 1.55 to 2.50) points per follow-up interval after adjusting for other predictors, affirming that literacy skills saw a statistically significant improvement with age over time (P<0.001). Additionally, older children initially showed markedly higher reading achievement (P<0.001). An extra baseline year corresponded with a 0.80 (95% CI: 0.67 to 0.93) higher score at baseline, after adjusting for other predictors. 
-
-REWORK 2: 
--->
-
-We further investigated the main and interaction effects of age, time, emotional, and cognitive scores using regression effect plots. @fig-effect-time-by-age presents estimated reading score trajectories over time for children of varying baseline ages, selected per study inclusion criteria. The greatest difference in mean reading scores occurs at baseline (p-value associated with Age <0.001), with the youngest children displaying the steepest growth in reading skills on average (p-value associated with age-time interaction <0.001). By the third follow-up, children across all starting ages converge to more similar average reading score levels, as shown by visualized marginal effects of the model.
-
-```{r main effect of time via age on reading score}
+```{r main effect of time via age on reading score 2}
 #| label: fig-effect-time-by-age
 #| fig-cap: "Estimated Trajectories in Reading Scores Over time"
 #| fig-height: 3.5
@@ -426,7 +902,7 @@ plot_model(model = primary_analysis_model,
   ggtitle("Effect of Time and Baseline Age on Reading Scores")
 ```
 
-```{r not evaluated - numbers for text}
+```{r not evaluated - numbers for text 2, eval = F}
 #| eval: false 
 curran %>% 
   group_by(homeemo) %>% 
@@ -480,72 +956,8 @@ emo_adj_slope(12) + 1.96 * sqrt(var_emo_adj_slope(12))
 
 ```
 
-<!-- 
-FIGURE 1 visualizes interactions between stimulation scores and learning rates over time. We selected sample 25th, 50th, and 75th
-quantiles of cognitive and emotional stimulation scores to show the effect of baseline score on the learning rates. 
 
-For an average child who had a cognitive stimulation score of 7 at baseline, corresponding to 25th percentile of all observed scores, expected two year change in the reading scores was 2.11 (1.63 to 2.59 95% CI). For comparison, the rate of change for an average child with a score of 9 at baseline was 2.13 (1.65 to 2.62 95% CI). An average child with a cognitive stimulation score of 11 had an average change in reading score of 2.15 (1.66 to 2.65 95% CI). These results might be suggestive that cognitive stimulation at baseline is improving the rate at which children learn to read, however, further research and data collection are required to make more definitive statements. 
-
-
---> 
-
-
-```{r grid of trajectories by cog and emo at baseline, eval = F}
-#| eval: false
-#| label: fig-main-effects-by-age
-#| fig-cap: "Values of Emotional and Cognitive Scores are chosen at 25th, 50th, and 75th sample percentiles" 
-#| fig-height: 4
-#| fig-width: 9
-# main effect main model for interactions 
-
-# quantile(curran$homecog, c(0.25, 0.5, 0.75))
-# quantile(curran$homeemo, c(0.25, 0.5, 0.75))
-
-# summary(curran$homecog)
-# summary(curran$homeemo)
-plot_model(model = primary_analysis_model, 
-           type = "eff", 
-           terms = c("occasion", "homecog [7, 9, 11]")) + 
-  theme_minimal() + 
-  labs(x = "Follow Up Period", 
-       y = "Reading Score", 
-       color = "Cognitive Stimulation Score") + 
-  ggtitle("") + 
-  theme(legend.position = "bottom", 
-        legend.text = element_text(size = 8)) -> p_left
-
-
-plot_model(model = primary_analysis_model, 
-           type = "eff", 
-           terms = c("occasion", "homeemo [8, 10, 12]")) + 
-  theme_minimal() + 
-  labs(x = "Follow Up Period", 
-       y = "Reading Score", 
-       color = "Emotional Stimulation Score") + 
-  ggtitle("") + 
-  theme(legend.position = "bottom", 
-        legend.text = element_text(size = 8)) -> p_right
-
-grid.arrange(p_left, p_right, nrow = 1)
-
-```
-
-### Secondary analysis: Antisocial behavior
-
-As a secondary outcome, we assessed the impact of emotional support and cognitive stimulation at home on antisocial behavior at baseline using Gaussian GEE model with exchangeable correlation structure. The results are presented in @tbl-sec-model-est. We have found no evidence that emotional support (P = 0.58) or cognitive stimulation (P=0.89) scores are statistically related to change in the antisocial behavior scores. Additionally, there is no evidence that the effect of cognitive scores varies at different levels of emotional scores (P = 0.36), and vice versa.
-
-
-<!--
-Antisocial behavior scores are a measure on the scale from 0 to 10, with 0 representing the lowest possible score. 
-We found that one unit increase in the emotional stimulation score was associated with an expected decrease of antisocial 
-score by 0.06 point (-0.28 to 015 95% confidence interval), after adjusting for other predictors. We estimate that one unit increase in cognitive scores resulted in 0.02 points (-0.21 to 0.24 95% confidence interval) increase in antisocial scores, after adjusting for other variables. Both estimates show a weak effect of two predictors on the antisocial score, with no statistical evidence of strong association. 
-
---> 
-
-@tbl-sec-model-est presents other predictors that have stronger effects that help explain variability in the antisocial scores. 
-Similar to the reading score analysis, follow-up time period, age of a child at baseline and their interaction were strong predictors of antisocial behavior change and development. @fig-effect-time-by-age-sec presents marginal effects of follow up times on antisocial scores for children with varying baseline ages. It appears that, on average, younger children had lower baseline antisocial scores, which grew at a steeper rate over the course of six years. In contrast, the oldest children at baseline had approximately 25% higher antisocial scores, which did not change greatly over time.
-
-```{r secondary outcome model }
+```{r secondary outcome model 2}
 #| label: tbl-sec-model-est
 #| tbl-cap: "Gaussian GEE Main Effects on Antisocial Behavioral Score" 
 #| 
@@ -586,7 +998,7 @@ secondary_analysis_model %>% tidy(conf.int = TRUE)  %>%
 ```
 
 
-```{r non evaluated calculator for slopes }
+```{r non evaluated calculator for slopes 2 }
 #| eval: false 
 
 summary(secondary_analysis_model)
@@ -653,27 +1065,4 @@ plot_model(model = secondary_analysis_model,
   ggtitle("Effect of Time and Baseline Age on Antisocial Scores")
 ```
 
-We also found an important effect of sex on the antisocial scores. We estimated the marginal effect of sex for males at 0.86 (95% CI: 0.58 to 1.14) compared to females, after adjusting for other factors. This factor has no statistically significant interactions with other predictors, we estimated constant differences between males and females in terms of their respective antisocial scores at all time points, while accounting for other variables. There is strong statistical evidence (P <0.001) that the average antisocial behavior score for males was at all times 0.86 points higher when compared to females.
-
-# Discussion 
-
-Overall, cognitive stimulation, emotional support, and the interaction between the two had very small, and largely statistically insignificant, effects on reading comprehension scores.   Unsurprisingly, the strongest predictors of reading scores were age (children who were older at baseline had better reading comprehension) and time (childcare's reading performance improved at later follow-up points). 
-
-According to estimates derived from our model, the average reading scores for children of all ages appear to converge to approximately the same level by the third follow-up time point. Notably, children who were six and eight years old at baseline would be twelve and fourteen years old, respectively, at this third follow-up point. The diminishing differences observed may suggest a reduction in the learning effect, with the majority of learning occurring during the earlier stages of the developmental process.
-
-It is important to reference the visualization provided by @fig-effect-time-by-age, which illustrates the average change in reading scores over time for children at different ages. By visually comparing the estimates at follow-up 2 for children aged eight years old at baseline and follow-up 3 for children aged six at baseline, we note that the ages of children in these two groups align at these respective follow-up points. Furthermore, the estimated average reading scores align as well. 
-
-This insight suggests that while the estimated learning rates may differ for varying ages, the average reading ability at a given age appears to be consistent. This observation underscores the importance of considering both the developmental trajectory and age-related variations when interpreting the dynamics of learning effects on reading scores. This analysis is prone to limitations, which are addressed later. 
-
-Moreover, our analysis revealed no statistically significant effect of the considered stimulation and support measures on the antisocial behavior of a child. In the realm of social relationships, the quest remains to identify interventions that consistently diminish these scores. Although we observed, on average, higher scores among males, our ability to elucidate the underlying reasons for this gender-based difference is constrained by the available data alone.
-
-To comprehensively contextualize these findings within the broader landscape of child development and propose actionable strategies, further scrutiny of existing research and acknowledgment of established methodologies are imperative. A more nuanced understanding of the multi factorial nature of antisocial behavior, including potential gender-specific patterns, will be instrumental in guiding the development of effective interventions aimed at fostering positive social outcomes for children.
-
-This study is subject to several potential limitations that may impact the robustness of our findings. Notably, cognitive stimulation and emotional support, integral variables in our analysis, relied on self-reports from parents. This introduces the possibility of measurement error, and the likelihood of this error being differential raises concerns. In other words, the accuracy of reporting cognitive stimulation and emotional support may have varied based on the child's reading ability. The presence of such differential measurement error has the potential to introduce bias in our results, making it challenging to ascertain its specific impact.
-
-A more accurate evaluation of these variables could have been achieved through assessments conducted by well-trained study staff. The dataset's limitations, including its scope and the potential for substantial unmeasured confounding, further contribute to the complexity of interpreting our findings. The extent to which these limitations may have influenced our results remains unclear.
-
-Furthermore, it is crucial to recognize that learning is a multifaceted and continuous process requiring sustained effort and attention over time. While we assessed baseline emotional support and cognitive stimulation scores, our dataset lacks information describing the persistence of these interventions over time. The absence of statistical evidence leaves room for speculation that a more dynamic monitoring approach may unveil stronger associations. In a prospective study, considering lagged effects of cognitive and emotional scores could provide insights into how stimulation and support at a given point in time influence reading and antisocial scores after six months or a year, for instance.
-
-The developmental trajectory of reading skills significantly shapes a child's future, empowering them with the necessary tools for growth and development. Consequently, future studies in this domain are vital, especially those focusing on optimal and dynamic treatment strategies to enhance our understanding of these complex associations.
 
