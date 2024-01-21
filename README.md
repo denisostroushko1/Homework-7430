@@ -52,3 +52,12 @@ I find and use for the analysis.
   + `lme4`: all purpose package for fitting `lmer` and `glmer` models. 
     - Specifying `glmer` with Gaussian family and identity link function yields the same results as `lmer` 
   
+# Final Project 
+
+* Final Project focuses on the analysis of the data using methods covered in HW2-4. The purpose of the project was to: 
+  + be able to develop a hypothesis from the exploratory data analysis (or data documentation like in the case of my project)
+  + make proper modeling choices and assumptions 
+  + make Statistical Analysis Plan (SAP) 
+  + deliver the results as a report 
+* Working folder covers all parts of the process, with the model development steps captured in the final report `.qmd` file 
+* I am working on review of existing R function and packages to use LASSO shrinkage for variable selection in the GEE and GLMM models. 

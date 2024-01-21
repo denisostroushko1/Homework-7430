@@ -9,6 +9,16 @@ header-includes: \usepackage{float}
 fontsize: 10pt
 ---
 
+# Prelude 
+This document presents the final project completed collaboratively with fellow students as part of PUBH 7430: Analysis of Correlated Data at the University of Minnesota School of Public Health in the Fall of 2023, a requirement in my MS Biostatistics Curriculum.
+
+All relevant work files, including the `.qmd` file for document generation, are accessible in my [GitHub repository](https://github.com/denisostroushko1/Homework-7430/tree/main/Final%20Project%20Working%20Folder). The repository contains exploratory data analysis, model development steps, and documentation of the raw dataset.
+
+The report is designed to be focused on the analysis of two hypotheses, focusing on the statistical aspects of the analysis. Its purpose is to convey results effectively to both statisticians and scientists with a proficiency in literature grounded in statistical inference.
+
+This document serves as a practical example of the final reports I can produce in my role as a data scientist or statistician. For more samples and a comprehensive view of my work, please explore my [portfolio](https://denisostroushko1.github.io/), showcasing various reports, studies, dashboards, and other analytical files.
+
+
 ```{R read in packges} 
 #| results: hide
 #| include: false 
@@ -56,7 +66,13 @@ curran <- curran %>% mutate(momage_tv = momage + occasion * 2)
 
 # Abstract
 
-**Introduction**. Emotional and cognitive stimulation at home may be important factors influencing child development both academically and behaviorally, however these effects are poorly described.  To address this gap, we sought to define the association between emotional and cognitive stimulation at home on reading comprehension and antisocial behavior.  **Methods**. This study was a secondary analysis of data obtained from a subset of children aged 6 to 8 born to female participants in the National Longitudinal Survey of Youth (NLSY).  Our primary outcome was the child's reading comprehension score and secondary outcome was antisocial behavior at four time points.  Predictor variables were the cognitive and emotional stimulation at home.  We employed a Gaussian Generalized Estimating Equation (GEE) model with an identity link and an exchangeable correlation structure to investigate the impact of cognitive stimulation and emotional support on child development. **Results**.  A total of 405 children were enrolled in the study. Mean home cognitive stimulation is 8.89 (SD 2.58) and home emotional stimulation was 9.20 (SD 2.31) at baseline.  The mean reading score at baseline was 2.52 (SD: 0.92) and increased throughout follow-up.  Measures of antisocial behavior at baseline was 1.66 (SD: 1.66) and remained stable.  A one-unit increase in the cognitive stimulation for an average child with an emotional score of 0 corresponded to a 0.08 (95% CI: -0.01 to 0.18) increase in reading comprehension after adjusting for other predictors, which was not significant (P=0.08).  The similar effect of emotional stimulation was 0.05 (95% CI: -0.03 to 0.13) increase in reading score.  We have found no evidence that emotional support (P = 0.58) or cognitive stimulation (P=0.89) scores are statistically related to change in the antisocial behavior scores.  **Conclusion**. This study did not find evidence that cognitive stimulation or emotional support provided at home were associated with children's reading comprehension.  Well-designed and adequately powered observational studies will be necessary to further investigate this association. 
+**Introduction**. Emotional and cognitive stimulation at home may be important factors influencing child development both academically and behaviorally, however these effects are poorly described.  To address this gap, we sought to define the association between emotional and cognitive stimulation at home on reading comprehension and antisocial behavior.  
+
+**Methods**. This study was a secondary analysis of data obtained from a subset of children aged 6 to 8 born to female participants in the National Longitudinal Survey of Youth (NLSY).  Our primary outcome was the child's reading comprehension score and secondary outcome was antisocial behavior at four time points.  Predictor variables were the cognitive and emotional stimulation at home.  We employed a Gaussian Generalized Estimating Equation (GEE) model with an identity link and an exchangeable correlation structure to investigate the impact of cognitive stimulation and emotional support on child development. 
+
+**Results**.  A total of 405 children were enrolled in the study. Mean home cognitive stimulation is 8.89 (SD 2.58) and home emotional stimulation was 9.20 (SD 2.31) at baseline.  The mean reading score at baseline was 2.52 (SD: 0.92) and increased throughout follow-up.  Measures of antisocial behavior at baseline was 1.66 (SD: 1.66) and remained stable.  A one-unit increase in the cognitive stimulation for an average child with an emotional score of 0 corresponded to a 0.08 (95% CI: -0.01 to 0.18) increase in reading comprehension after adjusting for other predictors, which was not significant (P=0.08).  The similar effect of emotional stimulation was 0.05 (95% CI: -0.03 to 0.13) increase in reading score.  We have found no evidence that emotional support (P = 0.58) or cognitive stimulation (P=0.89) scores are statistically related to change in the antisocial behavior scores. 
+
+**Conclusion**. This study did not find evidence that cognitive stimulation or emotional support provided at home were associated with children's reading comprehension.  Well-designed and adequately powered observational studies will be necessary to further investigate this association. 
 
 # Introduction 
 
